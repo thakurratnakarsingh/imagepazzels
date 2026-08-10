@@ -30,8 +30,8 @@ Requirements: Node.js 18+, MySQL 8+, JDK 17, and Android SDK 34.
 ### Android app
 
 1. Ensure the API is running and the selected actresses have images uploaded for the levels you want to play.
-2. The default API URL is `http://10.0.2.2:5000/`, which reaches the host machine from the Android emulator.
-3. For a physical device, add a LAN address to `mobile/gradle.properties`, for example `API_BASE_URL=http://192.168.1.20:5000/`.
+2. The configured API URL is `http://10.184.70.192:5000/` for devices connected to the same network.
+3. If the machine IP changes, update `API_BASE_URL` in `mobile/gradle.properties` and both server `.env` files.
 4. Build with `cd mobile && ./gradlew assembleDebug` or open the `mobile` directory in Android Studio.
 
 The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracking, local preferences, sound and vibration controls, server-backed save/restore, server-scored completion, rewards, and level advancement.

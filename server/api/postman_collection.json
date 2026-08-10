@@ -10,9 +10,9 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "http://localhost:5000/api/v1/mobile/auth/guest",
+          "raw": "http://10.184.70.192:5000/api/v1/mobile/auth/guest",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": ["10", "184", "70", "192"],
           "port": "5000",
           "path": ["api", "v1", "mobile", "auth", "guest"]
         }
@@ -29,9 +29,9 @@
           }
         ],
         "url": {
-          "raw": "http://localhost:5000/api/v1/mobile/game/levels",
+          "raw": "http://10.184.70.192:5000/api/v1/mobile/game/levels",
           "protocol": "http",
-          "host": ["localhost"],
+          "host": ["10", "184", "70", "192"],
           "port": "5000",
           "path": ["api", "v1", "mobile", "game", "levels"]
         }

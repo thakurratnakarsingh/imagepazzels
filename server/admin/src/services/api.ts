@@ -2,7 +2,7 @@ import axios from 'axios';
 import { store } from '../store';
 import { logout } from '../store/authSlice';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://10.184.70.192:5000/api/v1';
 
 const api = axios.create({
   baseURL,

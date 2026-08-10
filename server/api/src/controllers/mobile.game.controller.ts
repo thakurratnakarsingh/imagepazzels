@@ -6,7 +6,7 @@ import { Op } from 'sequelize';
 import { sequelize } from '../config/database';
 
 const assetUrl = (relativePath: string) => {
-  const base = (process.env.API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const base = (process.env.API_BASE_URL || 'http://10.184.70.192:5000').replace(/\/$/, '');
   return `${base}/uploads/${relativePath.replace(/^\//, '')}`;
 };
 

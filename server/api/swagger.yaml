@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: REST API for the Actress Puzzle Game Mobile and Admin apps.
 servers:
-  - url: http://localhost:5000/api/v1
+  - url: http://10.184.70.192:5000/api/v1
 paths:
   /mobile/auth/guest:
     post:

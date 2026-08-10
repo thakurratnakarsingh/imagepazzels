@@ -15,10 +15,11 @@ export const getActiveSplash = async (req: Request, res: Response, next: NextFun
       });
     }
 
+    const apiBaseUrl = (process.env.API_BASE_URL || 'http://10.184.70.192:5000').replace(/\/$/, '');
     res.json({
       id: splash.id,
       name: splash.name,
-      image: `${process.env.API_BASE_URL}/uploads/splash/${splash.image_url}`,
+      image: `${apiBaseUrl}/uploads/splash/${splash.image_url}`,
       time: splash.time
     });
   } catch (error) {
