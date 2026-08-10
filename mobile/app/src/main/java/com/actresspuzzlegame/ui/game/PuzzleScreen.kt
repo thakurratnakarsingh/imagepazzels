@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,13 +29,17 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -99,6 +105,15 @@ fun PuzzleScreen(
         if (state.isCompleted && tileBitmaps.isNotEmpty()) onCompleted()
     }
 
+    fun moveTile(position: Int): Boolean {
+        val moved = viewModel.onTileClicked(position)
+        if (moved) {
+            if (soundEnabled) toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 35)
+            if (vibrationEnabled) triggerVibration(context)
+        }
+        return moved
+    }
+
     when {
         imageError != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(imageError.orEmpty(), color = MaterialTheme.colorScheme.error)
@@ -125,32 +140,64 @@ fun PuzzleScreen(
                     .border(1.dp, Color(0xFF122033))
             ) {
                 state.tiles.forEach { tile ->
-                    val isEmpty = tile.id == state.tiles.lastIndex && !state.isCompleted
-                    val row = tile.currentPosition / columns
-                    val column = tile.currentPosition % columns
-                    val tileModifier = Modifier
-                        .offset(x = tileWidth * column, y = tileHeight * row)
-                        .size(width = tileWidth, height = tileHeight)
-                        .border(0.6.dp, Color.White.copy(alpha = 0.9f))
-                        .clickable(enabled = !state.isCompleted) {
-                            val moved = viewModel.onTileClicked(tile.currentPosition)
-                            if (moved) {
-                                if (soundEnabled) {
-                                    toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 35)
-                                }
-                                if (vibrationEnabled) triggerVibration(context)
-                            }
-                        }
-
-                    if (isEmpty) {
-                        Box(tileModifier.background(Color(0xFF172638)))
-                    } else {
-                        Image(
-                            bitmap = tileBitmaps[tile.bitmapRegion].asImageBitmap(),
-                            contentDescription = "Puzzle tile ${tile.id + 1}",
-                            contentScale = ContentScale.FillBounds,
-                            modifier = tileModifier
+                    key(tile.id) {
+                        val isEmpty = tile.id == state.tiles.lastIndex && !state.isCompleted
+                        val position = tile.currentPosition
+                        val row = position / columns
+                        val column = position % columns
+                        val emptyRow = state.emptyTilePosition / columns
+                        val emptyColumn = state.emptyTilePosition % columns
+                        val rowDirection = emptyRow - row
+                        val columnDirection = emptyColumn - column
+                        val isAdjacent = kotlin.math.abs(rowDirection) + kotlin.math.abs(columnDirection) == 1
+                        val animatedX by animateDpAsState(
+                            targetValue = tileWidth * column,
+                            animationSpec = tween(160),
+                            label = "tile_x_${tile.id}"
                         )
+                        val animatedY by animateDpAsState(
+                            targetValue = tileHeight * row,
+                            animationSpec = tween(160),
+                            label = "tile_y_${tile.id}"
+                        )
+                        val tileModifier = Modifier
+                            .offset(x = animatedX, y = animatedY)
+                            .size(width = tileWidth, height = tileHeight)
+                            .border(0.6.dp, Color.White.copy(alpha = 0.9f))
+                            .pointerInput(position, state.emptyTilePosition, state.isCompleted) {
+                                if (!state.isCompleted && isAdjacent && !isEmpty) {
+                                    var totalDrag = Offset.Zero
+                                    var movedDuringGesture = false
+                                    val threshold = 24.dp.toPx()
+                                    detectDragGestures(
+                                        onDrag = { change, dragAmount ->
+                                            change.consume()
+                                            if (!movedDuringGesture) {
+                                                totalDrag += dragAmount
+                                                val movementTowardEmpty =
+                                                    totalDrag.x * columnDirection + totalDrag.y * rowDirection
+                                                if (movementTowardEmpty >= threshold) {
+                                                    movedDuringGesture = moveTile(position)
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                            .clickable(enabled = !state.isCompleted && !isEmpty) {
+                                moveTile(position)
+                            }
+
+                        if (isEmpty) {
+                            Box(tileModifier.background(Color(0xFF172638)))
+                        } else {
+                            Image(
+                                bitmap = tileBitmaps[tile.bitmapRegion].asImageBitmap(),
+                                contentDescription = "Puzzle tile ${tile.id + 1}",
+                                contentScale = ContentScale.FillBounds,
+                                modifier = tileModifier
+                            )
+                        }
                     }
                 }
             }

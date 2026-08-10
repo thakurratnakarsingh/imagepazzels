@@ -632,7 +632,7 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    "Tap a tile beside the empty space",
+                    "Swipe a tile into the empty space",
                     color = Color(0xFF6B7587),
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
@@ -697,7 +697,7 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
 
                 Spacer(Modifier.height(14.dp))
                 TutorialTip("1", "Find the empty dark square")
-                TutorialTip("2", "Tap any tile directly beside it")
+                TutorialTip("2", "Swipe an adjacent tile toward it (or tap)")
                 TutorialTip("3", "Keep sliding until the picture is complete")
                 Spacer(Modifier.height(18.dp))
                 Button(
