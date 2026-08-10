@@ -46,7 +46,15 @@ fun AppNavigation() {
             } else {
                 emptyList()
             }
-            HomeScreen(actressIds = actressIds)
+            HomeScreen(
+                actressIds = actressIds,
+                onQuit = { navController.popBackStack("actress_selection", inclusive = false) },
+                onSessionExpired = {
+                    navController.navigate("login") {
+                        popUpTo("game/{actressIds}") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

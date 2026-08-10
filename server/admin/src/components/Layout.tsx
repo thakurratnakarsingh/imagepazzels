@@ -1,7 +1,6 @@
-import React from 'react';
 import { Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Dashboard, People, Collections, Settings, ExitToApp, Gamepad } from '@mui/icons-material';
+import { Dashboard, People, Collections, ExitToApp } from '@mui/icons-material';
 import { useDispatch } from 'react-redux';
 import { logout } from '../store/authSlice';
 

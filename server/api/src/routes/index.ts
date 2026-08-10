@@ -3,7 +3,7 @@ import { adminLogin } from '../controllers/admin.auth.controller';
 import { mobileGuestLogin } from '../controllers/mobile.auth.controller';
 import { getActiveSplash } from '../controllers/mobile.splash.controller';
 import { getActresses } from '../controllers/mobile.actress.controller';
-import { getMobileConfig } from '../controllers/mobile.config.controller';
+import { getMobileConfig, getPrivacyPolicy } from '../controllers/mobile.config.controller';
 import { getLevels, getLevelAssignment, startSession, saveProgress, completeLevel, getGameLevelImage } from '../controllers/mobile.game.controller';
 import { createTicket, getTickets, getTicketMessages } from '../controllers/mobile.support.controller';
 import { upload } from '../middleware/upload';
@@ -19,6 +19,7 @@ router.post('/mobile/auth/guest', mobileGuestLogin);
 router.get('/mobile/splash/active', getActiveSplash);
 router.get('/mobile/actresses', getActresses);
 router.get('/mobile/config', getMobileConfig);
+router.get('/mobile/privacy-policy', getPrivacyPolicy);
 
 // Mobile Game APIs (Authenticated)
 router.post('/mobile/game/level-image', authenticateMobileToken, getGameLevelImage);

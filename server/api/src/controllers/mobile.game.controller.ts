@@ -1,8 +1,17 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import { Level, UserLevelAssignment, ActressImage, UserActressSelection, PuzzleSession, UserGameProgress, UserLevelCompletion, User } from '../models';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { Op } from 'sequelize';
+import { sequelize } from '../config/database';
+
+const assetUrl = (relativePath: string) => {
+  const base = (process.env.API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
+  return `${base}/uploads/${relativePath.replace(/^\//, '')}`;
+};
+
+const httpError = (status: number, message: string) =>
+  Object.assign(new Error(message), { status });
 
 export const getLevels = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -12,7 +21,7 @@ export const getLevels = async (req: AuthRequest, res: Response, next: NextFunct
     });
 
     const completions = await UserLevelCompletion.findAll({
-      where: { user_id: req.user.id }
+      where: { user_id: req.user!.id }
     });
 
     const completionMap = completions.reduce((acc: any, c) => {
@@ -20,6 +29,9 @@ export const getLevels = async (req: AuthRequest, res: Response, next: NextFunct
       return acc;
     }, {});
 
+    const completedLevelNumbers = new Set(
+      levels.filter(level => completionMap[level.id]).map(level => level.level_number)
+    );
     const enrichedLevels = levels.map(level => {
       const comp = completionMap[level.id];
       return {
@@ -29,7 +41,7 @@ export const getLevels = async (req: AuthRequest, res: Response, next: NextFunct
         difficulty: level.difficulty,
         isCompleted: !!comp,
         stars: comp ? comp.stars : 0,
-        isLocked: level.is_locked_default // Additional logic for unlocking next levels can be placed here
+        isLocked: level.level_number > 1 && !completedLevelNumbers.has(level.level_number - 1)
       };
     });
 
@@ -42,7 +54,7 @@ export const getLevels = async (req: AuthRequest, res: Response, next: NextFunct
 export const getLevelAssignment = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { levelNumber } = req.params;
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
     const level = await Level.findOne({ where: { level_number: levelNumber, is_active: true } });
     if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -112,7 +124,7 @@ export const getLevelAssignment = async (req: AuthRequest, res: Response, next: 
         },
         image: {
           id: (assignment as any).image.id,
-          imageUrl: `${process.env.API_BASE_URL}/uploads/${(assignment as any).image.image_url}`,
+          imageUrl: assetUrl((assignment as any).image.image_url),
           width: (assignment as any).image.width,
           height: (assignment as any).image.height
         },
@@ -128,13 +140,17 @@ export const getLevelAssignment = async (req: AuthRequest, res: Response, next: 
 export const startSession = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { levelId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
-    // Optional: mark old sessions for this level as abandoned or keep them
-    const session = await PuzzleSession.create({
-      id: uuidv4(),
-      user_id: userId,
-      level_id: levelId
+    if (!Number.isInteger(levelId)) {
+      return res.status(400).json({ success: false, message: 'A valid levelId is required' });
+    }
+    const level = await Level.findOne({ where: { id: levelId, is_active: true } });
+    if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+
+    const [session] = await PuzzleSession.findOrCreate({
+      where: { user_id: userId, level_id: levelId, is_completed: false },
+      defaults: { id: randomUUID(), user_id: userId, level_id: levelId }
     });
 
     res.json({ success: true, data: { sessionId: session.id } });
@@ -146,12 +162,41 @@ export const startSession = async (req: AuthRequest, res: Response, next: NextFu
 export const saveProgress = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { levelId, sessionId, tileArrangement, emptyTileIndex, moveCount, elapsedTimeSeconds } = req.body;
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
-    let progress = await UserGameProgress.findOne({ where: { session_id: sessionId } });
+    if (!Number.isInteger(levelId) || typeof sessionId !== 'string') {
+      return res.status(400).json({ success: false, message: 'Valid levelId and sessionId are required' });
+    }
+
+    const [level, session] = await Promise.all([
+      Level.findByPk(levelId),
+      PuzzleSession.findOne({
+        where: { id: sessionId, user_id: userId, level_id: levelId, is_completed: false }
+      })
+    ]);
+    if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+    if (!session) return res.status(403).json({ success: false, message: 'Invalid puzzle session' });
+
+    const tileCount = level.rows * level.columns;
+    const validArrangement = Array.isArray(tileArrangement)
+      && tileArrangement.length === tileCount
+      && tileArrangement.every(Number.isInteger)
+      && new Set(tileArrangement).size === tileCount
+      && Math.min(...tileArrangement) === 0
+      && Math.max(...tileArrangement) === tileCount - 1;
+    if (!validArrangement || tileArrangement[emptyTileIndex] !== tileCount - 1) {
+      return res.status(400).json({ success: false, message: 'Invalid tile arrangement' });
+    }
+    if (!Number.isInteger(moveCount) || moveCount < 0 ||
+        !Number.isInteger(elapsedTimeSeconds) || elapsedTimeSeconds < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid progress counters' });
+    }
+
+    let progress = await UserGameProgress.findOne({ where: { user_id: userId, level_id: levelId } });
 
     if (progress) {
       progress.tile_arrangement = tileArrangement;
+      progress.session_id = sessionId;
       progress.empty_tile_index = emptyTileIndex;
       progress.move_count = moveCount;
       progress.elapsed_time_seconds = elapsedTimeSeconds;
@@ -182,50 +227,86 @@ export const saveProgress = async (req: AuthRequest, res: Response, next: NextFu
 
 export const completeLevel = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { levelId, imageId, moves, timeTakenSeconds, stars, puzzleSessionId } = req.body;
-    const userId = req.user.id;
+    const { levelId, imageId, moves, timeTakenSeconds, puzzleSessionId } = req.body;
+    const userId = req.user!.id;
 
-    const session = await PuzzleSession.findByPk(puzzleSessionId);
-    if (!session || session.is_completed) {
-      return res.status(400).json({ success: false, message: 'Invalid or already completed session' });
+    if (![levelId, imageId, moves, timeTakenSeconds].every(Number.isInteger)
+        || moves < 0 || timeTakenSeconds < 0 || typeof puzzleSessionId !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid completion data' });
     }
 
-    const level = await Level.findByPk(levelId);
-    if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+    const result = await sequelize.transaction(async transaction => {
+      const [session, level] = await Promise.all([
+        PuzzleSession.findOne({
+          where: { id: puzzleSessionId, user_id: userId, level_id: levelId },
+          transaction,
+          lock: transaction.LOCK.UPDATE
+        }),
+        Level.findByPk(levelId, { transaction })
+      ]);
+      if (!session) throw httpError(403, 'Invalid puzzle session');
+      if (!level) throw httpError(404, 'Level not found');
 
-    // Prevent duplicate rewards
-    const existingCompletion = await UserLevelCompletion.findOne({ where: { user_id: userId, level_id: levelId } });
-    
-    let pointsToAward = 0;
-    if (!existingCompletion) {
-      pointsToAward = level.reward_points;
-      
-      const user = await User.findByPk(userId);
-      if (user) {
-        user.total_points += pointsToAward;
-        user.current_level = Math.max(user.current_level, level.level_number + 1);
-        await user.save();
+      const image = await ActressImage.findOne({
+        where: { id: imageId, level_number: level.level_number, is_active: true },
+        transaction
+      });
+      if (!image) throw httpError(400, 'Image does not belong to this level');
+
+      const existingCompletion = await UserLevelCompletion.findOne({
+        where: { user_id: userId, level_id: levelId },
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
+      if (existingCompletion) {
+        if (!session.is_completed) {
+          session.is_completed = true;
+          await session.save({ transaction });
+        }
+        return {
+          message: 'Level was already completed',
+          rewardPointsEarned: 0,
+          stars: existingCompletion.stars
+        };
       }
-    }
 
-    await UserLevelCompletion.create({
-      user_id: userId,
-      level_id: levelId,
-      session_id: puzzleSessionId,
-      actress_image_id: imageId,
-      moves,
-      time_taken_seconds: timeTakenSeconds,
-      stars,
-      reward_points_earned: pointsToAward
+      if (session.is_completed) throw httpError(400, 'Session is already completed');
+
+      const stars = moves <= level.max_moves_3_stars
+        ? 3
+        : moves <= level.max_moves_2_stars ? 2 : 1;
+      const pointsToAward = level.reward_points;
+      const user = await User.findByPk(userId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
+      if (!user) throw httpError(404, 'User not found');
+
+      await UserLevelCompletion.create({
+        user_id: userId,
+        level_id: levelId,
+        session_id: puzzleSessionId,
+        actress_image_id: imageId,
+        moves,
+        time_taken_seconds: timeTakenSeconds,
+        stars,
+        reward_points_earned: pointsToAward
+      }, { transaction });
+
+      user.total_points += pointsToAward;
+      user.current_level = Math.max(user.current_level, level.level_number + 1);
+      await user.save({ transaction });
+
+      session.is_completed = true;
+      await session.save({ transaction });
+
+      return { message: 'Level completed', rewardPointsEarned: pointsToAward, stars };
     });
 
-    session.is_completed = true;
-    await session.save();
-
-    res.json({ 
-      success: true, 
-      message: 'Level completed',
-      data: { rewardPointsEarned: pointsToAward }
+    res.json({
+      success: true,
+      message: result.message,
+      data: { rewardPointsEarned: result.rewardPointsEarned, stars: result.stars }
     });
   } catch (error) {
     next(error);
@@ -244,29 +325,89 @@ export const getGameLevelImage = async (req: AuthRequest, res: Response, next: N
       return res.status(400).json({ success: false, message: 'actress_ids must be a non-empty array' });
     }
 
-    // Find all images matching the selected actresses and the specific level
-    const images = await ActressImage.findAll({
-      where: {
-        level_number: level,
-        actress_id: { [Op.in]: actress_ids },
-        is_active: true
-      }
-    });
+    const uniqueActressIds = [...new Set(actress_ids.filter(Number.isInteger))];
+    if (uniqueActressIds.length === 0 || uniqueActressIds.length > 100) {
+      return res.status(400).json({ success: false, message: 'actress_ids contains invalid values' });
+    }
 
-    if (images.length === 0) {
+    const [levelRecord, images] = await Promise.all([
+      Level.findOne({ where: { level_number: level, is_active: true } }),
+      ActressImage.findAll({
+        where: {
+          level_number: level,
+          actress_id: { [Op.in]: uniqueActressIds },
+          is_active: true
+        }
+      })
+    ]);
+
+    if (!levelRecord) {
+      return res.status(404).json({ success: false, message: 'Level is not available' });
+    }
+
+    const existingAssignment = await UserLevelAssignment.findOne({
+      where: { user_id: req.user!.id, level_id: levelRecord.id },
+      include: [{ model: ActressImage, as: 'image' }]
+    });
+    const assignedCandidate = (existingAssignment as any)?.image as ActressImage | undefined;
+    const assignedImage = assignedCandidate?.is_active && assignedCandidate.level_number === level
+      ? assignedCandidate
+      : undefined;
+
+    if (images.length === 0 && !assignedImage) {
       return res.status(404).json({ success: false, message: 'No image found for the selected actresses at this level' });
     }
 
-    // Pick one image randomly if multiple exist
-    const randomIndex = Math.floor(Math.random() * images.length);
-    const selectedImage = images[randomIndex];
+    // Keep the same image when a saved puzzle is reopened.
+    const selectedImage = assignedImage || images[Math.floor(Math.random() * images.length)];
+    if (!existingAssignment) {
+      await UserLevelAssignment.create({
+        user_id: req.user!.id,
+        level_id: levelRecord.id,
+        actress_image_id: selectedImage.id
+      });
+    } else if (!assignedImage) {
+      existingAssignment.actress_image_id = selectedImage.id;
+      await existingAssignment.save();
+    }
+
+    let session = await PuzzleSession.findOne({
+      where: { user_id: req.user!.id, level_id: levelRecord.id, is_completed: false },
+      order: [['last_activity_at', 'DESC']]
+    });
+    if (!session) {
+      session = await PuzzleSession.create({
+        id: randomUUID(),
+        user_id: req.user!.id,
+        level_id: levelRecord.id
+      });
+    }
+    const savedProgress = await UserGameProgress.findOne({
+      where: { user_id: req.user!.id, level_id: levelRecord.id, session_id: session.id }
+    });
 
     res.json({
       level: selectedImage.level_number,
+      level_id: levelRecord.id,
+      rows: levelRecord.rows,
+      columns: levelRecord.columns,
+      shuffle_moves: levelRecord.shuffle_count,
+      max_moves_3_stars: levelRecord.max_moves_3_stars,
+      max_moves_2_stars: levelRecord.max_moves_2_stars,
+      reward_points: levelRecord.reward_points,
+      session_id: session.id,
+      saved_progress: savedProgress ? {
+        tile_arrangement: savedProgress.tile_arrangement,
+        empty_tile_index: savedProgress.empty_tile_index,
+        move_count: savedProgress.move_count,
+        elapsed_time_seconds: savedProgress.elapsed_time_seconds
+      } : null,
       image: {
         id: selectedImage.id,
         actress_id: selectedImage.actress_id,
-        image_url: `${process.env.API_BASE_URL}/uploads/${selectedImage.image_url}`
+        image_url: assetUrl(selectedImage.image_url),
+        width: selectedImage.width,
+        height: selectedImage.height
       }
     });
   } catch (error) {

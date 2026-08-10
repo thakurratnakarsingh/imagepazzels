@@ -1,7 +1,13 @@
 import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../config/database';
 
-export class PrivacyPolicy extends Model {}
+export class PrivacyPolicy extends Model {
+  public id!: number;
+  public version!: string;
+  public content!: string;
+  public is_active!: boolean;
+  public published_at!: Date;
+}
 
 PrivacyPolicy.init({
   id: {
@@ -9,14 +15,13 @@ PrivacyPolicy.init({
     autoIncrement: true,
     primaryKey: true,
   },
-  version: { type: DataTypes.STRING },
-  content: { type: DataTypes.STRING },
-  is_active: { type: DataTypes.STRING },
-  published_at: { type: DataTypes.STRING }
+  version: { type: DataTypes.STRING(50), allowNull: false },
+  content: { type: DataTypes.TEXT, allowNull: false },
+  is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+  published_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
 }, {
   sequelize,
   tableName: 'privacy_policies',
-  timestamps: true,
+  timestamps: false,
   underscored: true
 });
-

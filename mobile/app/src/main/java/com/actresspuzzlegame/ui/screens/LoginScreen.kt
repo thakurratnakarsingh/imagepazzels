@@ -1,6 +1,7 @@
 package com.actresspuzzlegame.ui.screens
 
 import android.content.Context
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.actresspuzzlegame.network.ApiClient
-import com.actresspuzzlegame.network.ApiService
+import com.actresspuzzlegame.network.GuestAuthRequest
 import kotlinx.coroutines.launch
 
 @Composable
@@ -41,8 +42,11 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 errorMessage = null
                 coroutineScope.launch {
                     try {
-                        val apiService = ApiClient.getClient().create(ApiService::class.java)
-                        val response = apiService.guestLogin()
+                        val deviceId = Settings.Secure.getString(
+                            context.contentResolver,
+                            Settings.Secure.ANDROID_ID
+                        ) ?: "unknown-device"
+                        val response = ApiClient.service.guestLogin(GuestAuthRequest(deviceId))
                         
                         if (response.isSuccessful && response.body()?.success == true) {
                             val token = response.body()?.data?.accessToken ?: ""
@@ -67,4 +71,3 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         }
     }
 }
-

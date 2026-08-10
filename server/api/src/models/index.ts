@@ -11,6 +11,8 @@ export * from './UserGameProgress';
 export * from './UserLevelCompletion';
 export * from './UserActressSelection';
 export * from './SupportTicket';
+export * from './PrivacyPolicy';
+export * from './TermsAndCondition';
 
 import { Actress } from './Actress';
 import { ActressImage } from './ActressImage';
@@ -68,4 +70,3 @@ PuzzleSession.hasOne(UserLevelCompletion, { foreignKey: 'session_id' });
 UserLevelCompletion.belongsTo(PuzzleSession, { foreignKey: 'session_id' });
 ActressImage.hasMany(UserLevelCompletion, { foreignKey: 'actress_image_id' });
 UserLevelCompletion.belongsTo(ActressImage, { foreignKey: 'actress_image_id' });
-

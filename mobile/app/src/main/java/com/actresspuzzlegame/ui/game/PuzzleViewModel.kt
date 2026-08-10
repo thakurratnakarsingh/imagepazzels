@@ -10,41 +10,48 @@ class PuzzleViewModel : ViewModel() {
     private val _state = MutableStateFlow(PuzzleGameState())
     val state: StateFlow<PuzzleGameState> = _state.asStateFlow()
 
-    fun initializeGame(rows: Int, columns: Int) {
+    fun initializeGame(
+        rows: Int,
+        columns: Int,
+        shuffleMoves: Int = rows * columns * 8,
+        savedArrangement: List<Int>? = null,
+        savedMoveCount: Int = 0
+    ) {
+        require(rows >= 2 && columns >= 2) { "Puzzle must be at least 2 x 2" }
         val totalTiles = rows * columns
-        // Tile IDs: 0 to totalTiles-1. The last tile is empty (totalTiles-1)
-        val initialTiles = List(totalTiles) { index ->
-            Tile(id = index, currentPosition = index, bitmapRegion = index)
+        val restoredIds = savedArrangement
+            ?.takeIf { arrangement ->
+                arrangement.size == totalTiles &&
+                    arrangement.toSet() == (0 until totalTiles).toSet()
+            }
+
+        val tileIds = restoredIds ?: createSolvableShuffle(
+            rows = rows,
+            columns = columns,
+            moves = shuffleMoves.coerceAtLeast(totalTiles * 2)
+        )
+        val emptyPos = tileIds.indexOf(totalTiles - 1)
+        val tiles = tileIds.mapIndexed { position, id ->
+            Tile(id = id, currentPosition = position, bitmapRegion = id)
         }
-
-        var shuffled = initialTiles
-        var emptyPos = totalTiles - 1
-        
-        // Shuffle until we get a solvable permutation
-        do {
-            shuffled = shuffled.shuffled()
-            emptyPos = shuffled.indexOfFirst { it.id == totalTiles - 1 }
-        } while (!isSolvable(shuffled, rows, columns, emptyPos))
-
-        // Update positions after shuffle
-        shuffled = shuffled.mapIndexed { index, tile -> tile.copy(currentPosition = index) }
 
         _state.value = PuzzleGameState(
             isLoading = false,
-            tiles = shuffled,
+            tiles = tiles,
             rows = rows,
             columns = columns,
             emptyTilePosition = emptyPos,
-            moveCount = 0
+            moveCount = savedMoveCount.coerceAtLeast(0),
+            isCompleted = checkWinCondition(tiles)
         )
     }
 
-    fun onTileClicked(tilePosition: Int) {
+    fun onTileClicked(tilePosition: Int): Boolean {
         val currentState = _state.value
-        if (currentState.isCompleted) return
+        if (currentState.isCompleted || !currentState.canMove) return false
+        if (tilePosition !in currentState.tiles.indices) return false
 
         val emptyPos = currentState.emptyTilePosition
-        val rows = currentState.rows
         val cols = currentState.columns
 
         // Check if adjacent (Manhattan distance)
@@ -76,35 +83,52 @@ class PuzzleViewModel : ViewModel() {
                     isCompleted = isComplete
                 )
             }
+            return true
         }
+        return false
     }
+
+    fun setInteractionEnabled(enabled: Boolean) {
+        _state.update { it.copy(canMove = enabled) }
+    }
+
+    fun tileArrangement(): List<Int> = _state.value.tiles.map { it.id }
 
     private fun checkWinCondition(tiles: List<Tile>): Boolean {
         // Win condition: every tile's ID matches its currentPosition
         return tiles.all { it.id == it.currentPosition }
     }
 
-    private fun isSolvable(tiles: List<Tile>, rows: Int, cols: Int, emptyPos: Int): Boolean {
-        var inversions = 0
-        val tileIds = tiles.map { it.id }.filter { it != rows * cols - 1 }
+    private fun createSolvableShuffle(rows: Int, columns: Int, moves: Int): List<Int> {
+        val total = rows * columns
+        val arrangement = (0 until total).toMutableList()
+        var emptyPosition = total - 1
+        var previousEmptyPosition = -1
 
-        for (i in 0 until tileIds.size) {
-            for (j in i + 1 until tileIds.size) {
-                if (tileIds[i] > tileIds[j]) inversions++
-            }
+        repeat(moves) {
+            val emptyRow = emptyPosition / columns
+            val emptyColumn = emptyPosition % columns
+            val candidates = buildList {
+                if (emptyRow > 0) add(emptyPosition - columns)
+                if (emptyRow < rows - 1) add(emptyPosition + columns)
+                if (emptyColumn > 0) add(emptyPosition - 1)
+                if (emptyColumn < columns - 1) add(emptyPosition + 1)
+            }.filter { it != previousEmptyPosition }
+
+            val nextPosition = (candidates.ifEmpty { listOf(previousEmptyPosition) }).random()
+            arrangement[emptyPosition] = arrangement[nextPosition]
+            arrangement[nextPosition] = total - 1
+            previousEmptyPosition = emptyPosition
+            emptyPosition = nextPosition
         }
 
-        // For odd columns: solvable if inversions are even
-        // For even columns: solvable if (inversions + blank_row_from_bottom) is odd (or even depending on formulation, blank row from bottom 1-indexed)
-        if (cols % 2 != 0) {
-            return inversions % 2 == 0
-        } else {
-            val emptyRowFromBottom = rows - (emptyPos / cols)
-            return if (emptyRowFromBottom % 2 == 0) {
-                inversions % 2 != 0
-            } else {
-                inversions % 2 == 0
-            }
+        if (arrangement.withIndex().all { (index, id) -> index == id }) {
+            val emptyRow = emptyPosition / columns
+            val neighbor = if (emptyRow > 0) emptyPosition - columns else emptyPosition + columns
+            arrangement[emptyPosition] = arrangement[neighbor]
+            arrangement[neighbor] = total - 1
         }
+
+        return arrangement
     }
 }

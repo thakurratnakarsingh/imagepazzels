@@ -15,24 +15,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import coil.compose.AsyncImage
-import kotlinx.coroutines.launch
 import com.actresspuzzlegame.network.ApiClient
-import com.actresspuzzlegame.network.ApiService
 import com.actresspuzzlegame.network.ActressData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActressSelectionScreen(onNavigateToGame: (List<Int>) -> Unit) {
-    val coroutineScope = rememberCoroutineScope()
     var actresses by remember { mutableStateOf<List<ActressData>>(emptyList()) }
     var selectedActressIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        val apiService = ApiClient.getClient().create(ApiService::class.java)
         try {
-            val response = apiService.getActresses()
+            val response = ApiClient.service.getActresses()
             if (response.isSuccessful && response.body()?.success == true) {
                 actresses = response.body()?.data?.filter { it.is_active } ?: emptyList()
             } else {
@@ -103,7 +99,7 @@ fun ActressSelectionScreen(onNavigateToGame: (List<Int>) -> Unit) {
                             ) {
                                 if (actress.thumbnail_image != null) {
                                     AsyncImage(
-                                        model = "${com.actresspuzzlegame.network.ApiClient.BASE_SERVER_URL}uploads/${actress.thumbnail_image}",
+                                        model = "${com.actresspuzzlegame.network.ApiClient.BASE_SERVER_URL}uploads/actresses/thumbnails/${actress.thumbnail_image}",
                                         contentDescription = actress.name,
                                         modifier = Modifier
                                             .size(50.dp)

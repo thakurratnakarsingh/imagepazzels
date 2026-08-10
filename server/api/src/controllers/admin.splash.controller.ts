@@ -36,6 +36,11 @@ export const createSplash = async (req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ success: false, message: 'Name is required' });
     }
 
+    const displayTime = time === undefined ? 3 : Number.parseInt(time, 10);
+    if (!Number.isInteger(displayTime) || displayTime < 1 || displayTime > 30) {
+      return res.status(400).json({ success: false, message: 'Display time must be between 1 and 30 seconds' });
+    }
+
     // Ensure directory exists
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
@@ -51,7 +56,7 @@ export const createSplash = async (req: Request, res: Response, next: NextFuncti
       name: name,
       subtitle: subtitle || '',
       image_url: filename,
-      time: time ? parseInt(time) : 3,
+      time: displayTime,
       is_active: false // Defaults to false as per requirements
     });
 
@@ -73,7 +78,13 @@ export const updateSplash = async (req: Request, res: Response, next: NextFuncti
 
     if (name !== undefined) splash.name = name;
     if (subtitle !== undefined) splash.subtitle = subtitle;
-    if (time !== undefined) splash.time = parseInt(time);
+    if (time !== undefined) {
+      const displayTime = Number.parseInt(time, 10);
+      if (!Number.isInteger(displayTime) || displayTime < 1 || displayTime > 30) {
+        return res.status(400).json({ success: false, message: 'Display time must be between 1 and 30 seconds' });
+      }
+      splash.time = displayTime;
+    }
 
     let oldFilepath = null;
     if (req.file) {
@@ -146,18 +157,20 @@ export const toggleSplashStatus = async (req: Request, res: Response, next: Next
       return res.status(404).json({ success: false, message: 'Splash not found' });
     }
 
-    // Set ALL splashes to inactive
-    await sequelize.query('UPDATE splash_screens SET is_active = false', { transaction });
-
-    // Set the selected one to active directly via update query
-    await sequelize.query('UPDATE splash_screens SET is_active = true WHERE id = ?', { 
-      replacements: [id],
-      transaction 
-    });
+    const shouldActivate = !splash.is_active;
+    if (shouldActivate) {
+      await SplashScreen.update({ is_active: false }, { where: {}, transaction });
+    }
+    splash.is_active = shouldActivate;
+    await splash.save({ transaction });
 
     await transaction.commit();
 
-    res.json({ success: true, message: 'Splash activated successfully', data: splash });
+    res.json({
+      success: true,
+      message: shouldActivate ? 'Splash activated successfully' : 'Splash deactivated successfully',
+      data: splash
+    });
   } catch (error) {
     await transaction.rollback();
     next(error);

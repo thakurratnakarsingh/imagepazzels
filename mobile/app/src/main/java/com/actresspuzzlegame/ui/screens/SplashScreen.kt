@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil.compose.AsyncImage
 import com.actresspuzzlegame.network.ApiClient
-import com.actresspuzzlegame.network.ApiService
 import com.actresspuzzlegame.network.SplashData
 import kotlinx.coroutines.delay
 import androidx.compose.ui.layout.ContentScale
@@ -24,8 +23,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
 
     LaunchedEffect(Unit) {
         try {
-            val apiService = ApiClient.getClient().create(ApiService::class.java)
-            val response = apiService.getActiveSplash()
+            val response = ApiClient.service.getActiveSplash()
             if (response.isSuccessful && response.body() != null) {
                 splashData.value = response.body()
             }
@@ -50,7 +48,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
             // Display dynamically fetched Splash Screen image
             AsyncImage(
                 model = data.image,
-                contentDescription = data.name ?: "Splash Screen",
+                contentDescription = data.name,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )

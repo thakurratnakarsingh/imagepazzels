@@ -12,9 +12,9 @@ export const adminLogin = async (req: Request, res: Response, next: NextFunction
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    // if (!admin.is_active) {
-    //   return res.status(403).json({ success: false, message: 'Account is inactive' });
-    // }
+    if (!admin.is_active) {
+      return res.status(403).json({ success: false, message: 'Account is inactive' });
+    }
 
     const adminPassword = admin.getDataValue('password') || admin.password;
     if (!adminPassword) {

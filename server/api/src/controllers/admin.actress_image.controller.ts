@@ -3,7 +3,7 @@ import { Actress, ActressImage } from '../models';
 import path from 'path';
 import fs from 'fs/promises';
 import sharp from 'sharp';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 // Helper to generate readable timestamps like 20260802-143045
 const getReadableTimestamp = () => {
@@ -96,7 +96,7 @@ export const uploadLevelImage = async (req: Request, res: Response, next: NextFu
     await fs.mkdir(thumbDir, { recursive: true });
 
     // Process new image
-    const filenameBase = `${actress.slug}-level-${level}-${getReadableTimestamp()}-${uuidv4().substring(0, 8)}`;
+    const filenameBase = `${actress.slug}-level-${level}-${getReadableTimestamp()}-${randomUUID().substring(0, 8)}`;
     const optimizedFilename = `${filenameBase}.webp`;
     const thumbFilename = `${filenameBase}-thumb.webp`;
 

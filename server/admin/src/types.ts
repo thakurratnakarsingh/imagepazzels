@@ -28,10 +28,10 @@ export interface ActressLevelItem {
 
 export interface SplashItem {
   id: number;
-  title: string;
+  name: string;
   subtitle?: string | null;
   image_url: string;
-  display_duration: number;
+  time: number;
   is_active: boolean;
 }
 

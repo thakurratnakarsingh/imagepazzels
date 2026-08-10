@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppConfiguration } from '../models';
+import { AppConfiguration, PrivacyPolicy } from '../models';
 
 export const getMobileConfig = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -18,6 +18,28 @@ export const getMobileConfig = async (req: Request, res: Response, next: NextFun
     res.json({
       success: true,
       data: configMap
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPrivacyPolicy = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const policy = await PrivacyPolicy.findOne({
+      where: { is_active: true },
+      order: [['published_at', 'DESC']]
+    });
+    if (!policy) {
+      return res.status(404).json({ success: false, message: 'Privacy policy is not available' });
+    }
+    res.json({
+      success: true,
+      data: {
+        version: policy.version,
+        content: policy.content,
+        published_at: policy.published_at
+      }
     });
   } catch (error) {
     next(error);

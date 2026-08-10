@@ -20,7 +20,7 @@ export const authenticateMobileToken = (req: AuthRequest, res: Response, next: N
 
   try {
     const decoded = verifyAccessToken(token);
-    if (decoded.type !== 'user' && decoded.type !== 'admin') {
+    if (decoded.type !== 'user') {
       return res.status(403).json({ success: false, message: 'Invalid token payload' });
     }
     req.user = decoded;
