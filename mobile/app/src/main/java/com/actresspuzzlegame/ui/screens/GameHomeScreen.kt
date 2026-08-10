@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.actresspuzzlegame.network.ActressData
 import com.actresspuzzlegame.network.ApiClient
+import com.actresspuzzlegame.ui.theme.BrandGradientColors
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import kotlin.math.cos
@@ -119,9 +120,7 @@ fun GameHomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF512DA8), Color(0xFF7B2CBF), Color(0xFFEE4B8B), Color(0xFFFF8A5B))
-                )
+                Brush.verticalGradient(BrandGradientColors)
             )
             .statusBarsPadding()
     ) {

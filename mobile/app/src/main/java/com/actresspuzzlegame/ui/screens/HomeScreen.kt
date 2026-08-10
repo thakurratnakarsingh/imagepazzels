@@ -11,6 +11,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -67,14 +68,21 @@ import com.actresspuzzlegame.network.GameLevelResponse
 import com.actresspuzzlegame.network.SaveProgressRequest
 import com.actresspuzzlegame.ui.game.PuzzleScreen
 import com.actresspuzzlegame.ui.game.PuzzleViewModel
+import com.actresspuzzlegame.ui.theme.BrandCream
+import com.actresspuzzlegame.ui.theme.BrandGold
+import com.actresspuzzlegame.ui.theme.BrandGradientColors
+import com.actresspuzzlegame.ui.theme.BrandInk
+import com.actresspuzzlegame.ui.theme.BrandMuted
+import com.actresspuzzlegame.ui.theme.BrandOrange
+import com.actresspuzzlegame.ui.theme.BrandPurple
+import com.actresspuzzlegame.ui.theme.BrandPurpleDark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
 
-private val GameBlue = Color(0xFF4D8BC2)
-private val GameBlueDark = Color(0xFF315F9F)
-private val PanelBlue = Color(0xFF326FC1)
+private val GameBlueDark = BrandPurpleDark
+private val PanelBlue = BrandPurple
 
 @Composable
 fun GameScreen(
@@ -265,9 +273,7 @@ fun GameScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    listOf(GameBlue, Color(0xFF7C98C3))
-                )
+                Brush.verticalGradient(BrandGradientColors)
             )
             .statusBarsPadding()
     ) {
@@ -278,12 +284,21 @@ fun GameScreen(
                     .padding(start = 22.dp, end = 22.dp, top = 14.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Level $currentLevel",
-                    color = Color.White,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Column {
+                    Text(
+                        text = "IMAGE PUZZLE",
+                        color = Color.White.copy(alpha = 0.68f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.5.sp
+                    )
+                    Text(
+                        text = "Level $currentLevel",
+                        color = Color.White,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
                 Spacer(Modifier.weight(1f))
                 Box(
                     modifier = Modifier
@@ -293,7 +308,7 @@ fun GameScreen(
                         .clickable { showSettings = true },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("⚙", color = Color(0xFF0D7281), fontSize = 31.sp)
+                    Text("⚙", color = BrandGold, fontSize = 31.sp)
                 }
             }
 
@@ -333,16 +348,25 @@ fun GameScreen(
                 }
             }
 
-            Text(
-                text = "${puzzleState.moveCount} moves  •  ${formatTime(elapsedSeconds)}",
-                color = Color.White.copy(alpha = 0.9f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 8.dp),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 17.sp
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 7.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    color = Color.White.copy(alpha = 0.18f),
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(18.dp))
+                ) {
+                    Text(
+                        text = "${puzzleState.moveCount} moves  •  ${formatTime(elapsedSeconds)}",
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 22.dp, vertical = 9.dp),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            }
 
             completion?.let { result ->
                 CompletionPanel(result) {
@@ -423,7 +447,7 @@ private fun SettingsDialog(
                 Spacer(Modifier.weight(1f))
                 Text(
                     "×",
-                    color = Color(0xFF153F78),
+                    color = BrandCream,
                     fontSize = 38.sp,
                     modifier = Modifier.clickable(onClick = onDismiss)
                 )
@@ -453,7 +477,7 @@ private fun SettingsDialog(
                 }
                 Text(
                     "Privacy Policy",
-                    color = Color(0xFF173E78),
+                    color = BrandCream,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().clickable(onClick = onPrivacy)
@@ -470,7 +494,7 @@ private fun SettingSwitch(label: String, checked: Boolean, onCheckedChange: (Boo
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = Color(0xFFBAF6F0), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = BrandCream, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
@@ -482,8 +506,8 @@ private fun SettingsButton(label: String, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(52.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFFFF7F0),
-            contentColor = Color(0xFF164E9A)
+            containerColor = BrandCream,
+            contentColor = BrandPurpleDark
         ),
         shape = RoundedCornerShape(14.dp)
     ) {
@@ -504,7 +528,7 @@ private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier 
 private fun CompletionPanel(result: CompletionUi, onNext: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
-        color = Color(0xFFFFF8F1),
+        color = BrandCream,
         shape = RoundedCornerShape(20.dp),
         shadowElevation = 10.dp
     ) {
@@ -513,7 +537,7 @@ private fun CompletionPanel(result: CompletionUi, onNext: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Puzzle complete!", color = Color(0xFF244A80), fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Text("Puzzle complete!", color = BrandPurpleDark, fontWeight = FontWeight.Black, fontSize = 18.sp)
                 Text(
                     "★".repeat(result.stars) + "☆".repeat(3 - result.stars),
                     color = Color(0xFFFFB300),
@@ -522,14 +546,14 @@ private fun CompletionPanel(result: CompletionUi, onNext: () -> Unit) {
                 Text(
                     "${result.moves} moves • ${formatTime(result.seconds)}" +
                         if (result.reward > 0) " • +${result.reward} points" else "",
-                    color = Color(0xFF51637B),
+                    color = BrandMuted,
                     fontSize = 12.sp
                 )
             }
             Button(
                 onClick = onNext,
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A3D))
+                colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
             ) {
                 Text("NEXT  ▶", fontWeight = FontWeight.Black)
             }
@@ -607,7 +631,7 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp),
-            color = Color(0xFFFFFBF5),
+            color = BrandCream,
             shape = RoundedCornerShape(28.dp),
             shadowElevation = 24.dp
         ) {
@@ -619,21 +643,21 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
             ) {
                 Text(
                     "HOW TO PLAY",
-                    color = Color(0xFF6236A5),
+                    color = BrandPurple,
                     fontSize = 13.sp,
                     letterSpacing = 2.sp,
                     fontWeight = FontWeight.Black
                 )
                 Text(
                     "Slide the picture tiles",
-                    color = Color(0xFF243553),
+                    color = BrandInk,
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Black,
                     textAlign = TextAlign.Center
                 )
                 Text(
                     "Swipe a tile into the empty space",
-                    color = Color(0xFF6B7587),
+                    color = BrandMuted,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
                 )
@@ -704,7 +728,7 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7047B8))
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandPurple)
                 ) {
                     Text("GOT IT — LET'S PLAY", fontSize = 17.sp, fontWeight = FontWeight.Black)
                 }
@@ -720,13 +744,13 @@ private fun TutorialTip(number: String, text: String) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier.size(27.dp).clip(CircleShape).background(Color(0xFFFFD45C)),
+            modifier = Modifier.size(27.dp).clip(CircleShape).background(BrandGold),
             contentAlignment = Alignment.Center
         ) {
-            Text(number, color = Color(0xFF4D327C), fontWeight = FontWeight.Black, fontSize = 13.sp)
+            Text(number, color = BrandPurpleDark, fontWeight = FontWeight.Black, fontSize = 13.sp)
         }
         Spacer(Modifier.size(10.dp))
-        Text(text, color = Color(0xFF42516A), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, color = BrandMuted, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.actresspuzzlegame.network.ApiClient
 import com.actresspuzzlegame.network.GuestAuthRequest
+import com.actresspuzzlegame.ui.theme.BrandGradientColors
 import kotlinx.coroutines.launch
 
 @Composable
@@ -92,9 +93,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF3F1D91), Color(0xFF7B2CBF), Color(0xFFFF5D8F), Color(0xFFFF9A5A))
-                )
+                Brush.verticalGradient(BrandGradientColors)
             )
             .statusBarsPadding()
     ) {
