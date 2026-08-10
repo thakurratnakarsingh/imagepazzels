@@ -1,0 +1,66 @@
+openapi: 3.0.0
+info:
+  title: Actress Puzzle Game API
+  version: 1.0.0
+  description: REST API for the Actress Puzzle Game Mobile and Admin apps.
+servers:
+  - url: http://localhost:5000/api/v1
+paths:
+  /mobile/auth/guest:
+    post:
+      summary: Guest Login
+      responses:
+        '200':
+          description: Successful login
+  /mobile/game/levels:
+    get:
+      summary: Get all levels and completion status
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of levels
+  /mobile/game/level/{levelNumber}:
+    get:
+      summary: Assigns/loads a level and returns the puzzle configuration
+      parameters:
+        - in: path
+          name: levelNumber
+          required: true
+          schema:
+            type: integer
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Level assigned
+  /mobile/game/session:
+    post:
+      summary: Start a new puzzle session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Session created
+  /mobile/game/progress:
+    post:
+      summary: Save game progress
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Progress saved
+  /mobile/game/complete:
+    post:
+      summary: Complete a level
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Level completed
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

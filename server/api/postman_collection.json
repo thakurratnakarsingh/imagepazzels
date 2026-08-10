@@ -1,0 +1,41 @@
+{
+  "info": {
+    "name": "Actress Puzzle Game API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Guest Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/v1/mobile/auth/guest",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "v1", "mobile", "auth", "guest"]
+        }
+      }
+    },
+    {
+      "name": "Get Levels",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/v1/mobile/game/levels",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "v1", "mobile", "game", "levels"]
+        }
+      }
+    }
+  ]
+}
