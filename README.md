@@ -6,7 +6,8 @@ This repository contains the Actress Puzzle Game project with a backend API, adm
 
 - `server/api` — Express + TypeScript API, Sequelize models, file uploads, and admin/mobile endpoints.
 - `server/admin` — React + Vite admin portal for managing actresses, splash screens, and assets.
-- `mobile` — Android project source and Gradle configuration.
+- `mobile` — Original Android puzzle client.
+- `mobile-slide` — Separately installable Android clone with finger-drag sliding controls.
 
 ## Setup
 
@@ -35,6 +36,15 @@ Requirements: Node.js 18+, MySQL 8+, JDK 17, and Android SDK 34.
 4. Build with `cd mobile && ./gradlew assembleDebug` or open the `mobile` directory in Android Studio.
 
 The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracking, local preferences, sound and vibration controls, server-backed save/restore, server-scored completion, rewards, and level advancement.
+
+### Slide-control Android clone
+
+1. Open `mobile-slide` as a separate project in Android Studio, or run `cd mobile-slide && ./gradlew assembleDebug`.
+2. It uses the same `API_BASE_URL` Gradle property and the same mobile API, database, uploaded images, admin configuration, authentication, progress, and completion endpoints as the original client.
+3. Its application ID is `com.actresspuzzlegame.slide`, so it can be installed beside the original app.
+4. During play, drag a tile directly beside the empty cell toward that space. The tile follows the finger and snaps into place when the drag passes the release threshold.
+
+The debug APK is generated at `mobile-slide/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Notes
 
