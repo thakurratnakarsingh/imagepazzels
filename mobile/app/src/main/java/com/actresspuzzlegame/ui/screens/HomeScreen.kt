@@ -3,6 +3,11 @@ package com.actresspuzzlegame.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -41,8 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,13 +65,15 @@ import com.actresspuzzlegame.ui.game.PuzzleScreen
 import com.actresspuzzlegame.ui.game.PuzzleViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val GameBlue = Color(0xFF4D8BC2)
 private val GameBlueDark = Color(0xFF315F9F)
 private val PanelBlue = Color(0xFF326FC1)
 
 @Composable
-fun HomeScreen(
+fun GameScreen(
     actressIds: List<Int>,
     onQuit: () -> Unit,
     onSessionExpired: () -> Unit
@@ -197,6 +207,14 @@ fun HomeScreen(
             puzzleState.moveCount <= twoStarLimit -> 2
             else -> 1
         }
+        val completedLevel = currentLevel
+        completion = CompletionUi(
+            stars = localStars,
+            reward = data?.reward_points ?: 0,
+            moves = puzzleState.moveCount,
+            seconds = elapsedSeconds
+        )
+        preferences.edit().putInt("current_level", currentLevel + 1).apply()
 
         scope.launch {
             var reward = data?.reward_points ?: 0
@@ -224,8 +242,9 @@ fun HomeScreen(
                 }
             }
 
-            preferences.edit().putInt("current_level", currentLevel + 1).apply()
-            completion = CompletionUi(stars, reward, puzzleState.moveCount, elapsedSeconds)
+            if (currentLevel == completedLevel && completion != null) {
+                completion = CompletionUi(stars, reward, puzzleState.moveCount, elapsedSeconds)
+            }
             completionSubmitting = false
         }
     }
@@ -244,7 +263,7 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 28.dp, end = 28.dp, top = 26.dp, bottom = 22.dp),
+                    .padding(start = 22.dp, end = 22.dp, top = 14.dp, bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -269,14 +288,14 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .heightIn(min = if (gameData == null) 320.dp else 0.dp)
                     .padding(horizontal = 18.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
                 when {
                     isLoading -> CircularProgressIndicator(
                         color = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center).padding(vertical = 120.dp)
                     )
                     errorMessage != null -> ErrorState(
                         message = errorMessage.orEmpty(),
@@ -307,11 +326,22 @@ fun HomeScreen(
                 color = Color.White.copy(alpha = 0.9f),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 14.dp),
+                    .padding(top = 10.dp, bottom = 8.dp),
                 textAlign = TextAlign.Center,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 17.sp
             )
+
+            completion?.let { result ->
+                CompletionPanel(result) {
+                    completion = null
+                    currentLevel++
+                }
+            }
+            Spacer(Modifier.weight(1f))
         }
+
+        if (completion != null) FireworksOverlay()
     }
 
     if (showSettings) {
@@ -343,13 +373,6 @@ fun HomeScreen(
             onQuit = { showSettings = false; onQuit() },
             onDismiss = { showSettings = false; statusMessage = null }
         )
-    }
-
-    completion?.let { result ->
-        CompletionDialog(result) {
-            completion = null
-            currentLevel++
-        }
     }
 
     if (showPrivacyPolicy) {
@@ -463,22 +486,88 @@ private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier 
 }
 
 @Composable
-private fun CompletionDialog(result: CompletionUi, onNext: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = {},
-        containerColor = Color(0xFFFFF8F1),
-        title = {
-            Text("Puzzle complete!", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-        },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text("★".repeat(result.stars) + "☆".repeat(3 - result.stars), color = Color(0xFFFFB300), fontSize = 36.sp)
-                Text("${result.moves} moves • ${formatTime(result.seconds)}")
-                if (result.reward > 0) Text("+${result.reward} points", fontWeight = FontWeight.Bold)
+private fun CompletionPanel(result: CompletionUi, onNext: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 4.dp),
+        color = Color(0xFFFFF8F1),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 10.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Puzzle complete!", color = Color(0xFF244A80), fontWeight = FontWeight.Black, fontSize = 18.sp)
+                Text(
+                    "★".repeat(result.stars) + "☆".repeat(3 - result.stars),
+                    color = Color(0xFFFFB300),
+                    fontSize = 24.sp
+                )
+                Text(
+                    "${result.moves} moves • ${formatTime(result.seconds)}" +
+                        if (result.reward > 0) " • +${result.reward} points" else "",
+                    color = Color(0xFF51637B),
+                    fontSize = 12.sp
+                )
             }
-        },
-        confirmButton = { Button(onClick = onNext) { Text("Next level") } }
+            Button(
+                onClick = onNext,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A3D))
+            ) {
+                Text("NEXT  ▶", fontWeight = FontWeight.Black)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FireworksOverlay() {
+    val transition = rememberInfiniteTransition(label = "fireworks")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = tween(1_700)),
+        label = "fireworks_progress"
     )
+    val colors = remember {
+        listOf(Color(0xFFFFD740), Color(0xFFFF4081), Color(0xFF69F0AE), Color(0xFF40C4FF), Color.White)
+    }
+
+    Canvas(Modifier.fillMaxSize()) {
+        val bursts = listOf(
+            Offset(size.width * 0.18f, size.height * 0.20f) to 0f,
+            Offset(size.width * 0.82f, size.height * 0.28f) to 0.34f,
+            Offset(size.width * 0.52f, size.height * 0.12f) to 0.68f
+        )
+        bursts.forEachIndexed { burstIndex, (center, phase) ->
+            val burstProgress = (progress + phase) % 1f
+            val alpha = (1f - burstProgress).coerceIn(0f, 1f)
+            val radius = size.minDimension * 0.34f * burstProgress
+            repeat(18) { particle ->
+                val angle = (Math.PI * 2.0 * particle / 18.0) + burstIndex * 0.25
+                val direction = Offset(cos(angle).toFloat(), sin(angle).toFloat())
+                val end = center + direction * radius
+                val tail = end - direction * (10f + 18f * (1f - burstProgress))
+                val color = colors[(particle + burstIndex) % colors.size].copy(alpha = alpha)
+                drawLine(color, tail, end, strokeWidth = 5f, cap = StrokeCap.Round)
+                drawCircle(color, radius = 4.5f, center = end)
+            }
+        }
+
+        repeat(26) { index ->
+            val x = ((index * 47f) % size.width)
+            val y = ((progress * size.height * 1.25f + index * 83f) % size.height)
+            drawLine(
+                color = colors[index % colors.size].copy(alpha = 0.8f),
+                start = Offset(x, y),
+                end = Offset(x + if (index % 2 == 0) 9f else -9f, y + 15f),
+                strokeWidth = 6f,
+                cap = StrokeCap.Round
+            )
+        }
+    }
 }
 
 @Composable

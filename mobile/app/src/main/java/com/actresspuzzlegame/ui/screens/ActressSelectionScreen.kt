@@ -20,9 +20,12 @@ import com.actresspuzzlegame.network.ActressData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActressSelectionScreen(onNavigateToGame: (List<Int>) -> Unit) {
+fun ActressSelectionScreen(
+    initialSelectedIds: Set<Int> = emptySet(),
+    onSelectionConfirmed: (List<Int>) -> Unit
+) {
     var actresses by remember { mutableStateOf<List<ActressData>>(emptyList()) }
-    var selectedActressIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var selectedActressIds by remember(initialSelectedIds) { mutableStateOf(initialSelectedIds) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -44,7 +47,7 @@ fun ActressSelectionScreen(onNavigateToGame: (List<Int>) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Select Actresses") },
+                title = { Text("Choose Your Model") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White
@@ -53,14 +56,14 @@ fun ActressSelectionScreen(onNavigateToGame: (List<Int>) -> Unit) {
         },
         bottomBar = {
             Button(
-                onClick = { onNavigateToGame(selectedActressIds.toList()) },
+                onClick = { onSelectionConfirmed(selectedActressIds.toList()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
                     .height(56.dp),
                 enabled = selectedActressIds.isNotEmpty()
             ) {
-                Text("START GAME (${selectedActressIds.size} Selected)", fontWeight = FontWeight.Bold)
+                Text("CONTINUE", fontWeight = FontWeight.Bold)
             }
         }
     ) { paddingValues ->
@@ -83,11 +86,7 @@ fun ActressSelectionScreen(onNavigateToGame: (List<Int>) -> Unit) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selectedActressIds = if (isSelected) {
-                                        selectedActressIds - actress.id
-                                    } else {
-                                        selectedActressIds + actress.id
-                                    }
+                                    selectedActressIds = if (isSelected) emptySet() else setOf(actress.id)
                                 },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
