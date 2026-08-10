@@ -3,6 +3,8 @@ package com.actresspuzzlegame.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -47,7 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -96,6 +100,7 @@ fun GameScreen(
     var supportEmail by remember { mutableStateOf("support@example.com") }
     var showPrivacyPolicy by remember { mutableStateOf(false) }
     var privacyPolicyText by remember { mutableStateOf<String?>(null) }
+    var showTutorial by remember { mutableStateOf(!preferences.getBoolean("game_tutorial_seen", false)) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
     var musicEnabled by remember { mutableStateOf(preferences.getBoolean("music_enabled", true)) }
     var soundEnabled by remember { mutableStateOf(preferences.getBoolean("sound_enabled", true)) }
@@ -156,8 +161,8 @@ fun GameScreen(
             ?.let { supportEmail = it }
     }
 
-    LaunchedEffect(gameData, puzzleState.isCompleted) {
-        while (gameData != null && !puzzleState.isCompleted) {
+    LaunchedEffect(gameData, puzzleState.isCompleted, showTutorial) {
+        while (gameData != null && !puzzleState.isCompleted && !showTutorial) {
             delay(1_000)
             elapsedSeconds++
         }
@@ -248,6 +253,13 @@ fun GameScreen(
             completionSubmitting = false
         }
     }
+
+    fun dismissTutorial() {
+        preferences.edit().putBoolean("game_tutorial_seen", true).apply()
+        showTutorial = false
+    }
+
+    BackHandler(enabled = showTutorial && gameData != null, onBack = ::dismissTutorial)
 
     Box(
         modifier = Modifier
@@ -342,6 +354,9 @@ fun GameScreen(
         }
 
         if (completion != null) FireworksOverlay()
+        if (showTutorial && gameData != null) {
+            GameTutorialOverlay(onDismiss = ::dismissTutorial)
+        }
     }
 
     if (showSettings) {
@@ -567,6 +582,151 @@ private fun FireworksOverlay() {
                 cap = StrokeCap.Round
             )
         }
+    }
+}
+
+@Composable
+private fun GameTutorialOverlay(onDismiss: () -> Unit) {
+    val transition = rememberInfiniteTransition(label = "slide_demo")
+    val slideProgress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1_250),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "demo_tile_slide"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xCC10152A))
+            .clickable(enabled = true, onClick = {}),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 26.dp),
+            color = Color(0xFFFFFBF5),
+            shape = RoundedCornerShape(28.dp),
+            shadowElevation = 24.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp, vertical = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "HOW TO PLAY",
+                    color = Color(0xFF6236A5),
+                    fontSize = 13.sp,
+                    letterSpacing = 2.sp,
+                    fontWeight = FontWeight.Black
+                )
+                Text(
+                    "Slide the picture tiles",
+                    color = Color(0xFF243553),
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    "Tap a tile beside the empty space",
+                    color = Color(0xFF6B7587),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(18.dp))
+                Canvas(Modifier.size(225.dp)) {
+                    val gap = 7f
+                    val tile = (size.width - gap * 4f) / 3f
+                    val colors = listOf(
+                        Color(0xFF7C4DFF), Color(0xFFFF5C8A), Color(0xFFFFB74D),
+                        Color(0xFF42A5F5), Color(0xFF26C6DA), Color(0xFF66BB6A),
+                        Color(0xFFEC407A), Color(0xFFFFCA28)
+                    )
+
+                    drawRoundRect(
+                        color = Color(0xFFE8EAF1),
+                        cornerRadius = CornerRadius(20f, 20f),
+                        size = size
+                    )
+
+                    drawRoundRect(
+                        color = Color(0xFF26364D),
+                        topLeft = Offset(gap + 2f * (tile + gap), gap + 2f * (tile + gap)),
+                        size = Size(tile, tile),
+                        cornerRadius = CornerRadius(12f, 12f)
+                    )
+
+                    var colorIndex = 0
+                    repeat(9) { position ->
+                        if (position == 7 || position == 8) return@repeat
+                        val row = position / 3
+                        val column = position % 3
+                        drawRoundRect(
+                            color = colors[colorIndex++ % colors.size],
+                            topLeft = Offset(gap + column * (tile + gap), gap + row * (tile + gap)),
+                            size = Size(tile, tile),
+                            cornerRadius = CornerRadius(12f, 12f)
+                        )
+                    }
+
+                    val movingX = gap + (1f + slideProgress) * (tile + gap)
+                    val movingY = gap + 2f * (tile + gap)
+                    drawRoundRect(
+                        color = Color(0xFFFFCA28),
+                        topLeft = Offset(movingX, movingY),
+                        size = Size(tile, tile),
+                        cornerRadius = CornerRadius(12f, 12f)
+                    )
+
+                    val finger = Offset(movingX + tile * 0.5f, movingY + tile * 0.55f)
+                    drawCircle(Color.White.copy(alpha = 0.92f), radius = tile * 0.18f, center = finger)
+                    drawCircle(Color(0xFF55358D), radius = tile * 0.10f, center = finger)
+                    drawLine(
+                        color = Color(0xFF55358D),
+                        start = Offset(gap + 1.48f * (tile + gap), movingY - 10f),
+                        end = Offset(gap + 2.50f * (tile + gap), movingY - 10f),
+                        strokeWidth = 5f,
+                        cap = StrokeCap.Round
+                    )
+                }
+
+                Spacer(Modifier.height(14.dp))
+                TutorialTip("1", "Find the empty dark square")
+                TutorialTip("2", "Tap any tile directly beside it")
+                TutorialTip("3", "Keep sliding until the picture is complete")
+                Spacer(Modifier.height(18.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7047B8))
+                ) {
+                    Text("GOT IT — LET'S PLAY", fontSize = 17.sp, fontWeight = FontWeight.Black)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TutorialTip(number: String, text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier.size(27.dp).clip(CircleShape).background(Color(0xFFFFD45C)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(number, color = Color(0xFF4D327C), fontWeight = FontWeight.Black, fontSize = 13.sp)
+        }
+        Spacer(Modifier.size(10.dp))
+        Text(text, color = Color(0xFF42516A), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

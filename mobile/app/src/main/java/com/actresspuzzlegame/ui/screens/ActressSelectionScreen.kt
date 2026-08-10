@@ -63,7 +63,10 @@ fun ActressSelectionScreen(
                     .height(56.dp),
                 enabled = selectedActressIds.isNotEmpty()
             ) {
-                Text("CONTINUE", fontWeight = FontWeight.Bold)
+                Text(
+                    "CONTINUE (${selectedActressIds.size} SELECTED)",
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     ) { paddingValues ->
@@ -86,7 +89,11 @@ fun ActressSelectionScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selectedActressIds = if (isSelected) emptySet() else setOf(actress.id)
+                                    selectedActressIds = if (isSelected) {
+                                        selectedActressIds - actress.id
+                                    } else {
+                                        selectedActressIds + actress.id
+                                    }
                                 },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant

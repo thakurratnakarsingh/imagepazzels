@@ -223,7 +223,11 @@ fun GameHomeScreen(
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                "Continue from Level $currentLevel",
+                if (actressIds.size > 1) {
+                    "${actressIds.size} models selected • Level $currentLevel"
+                } else {
+                    "Continue from Level $currentLevel"
+                },
                 color = Color.White.copy(alpha = 0.78f),
                 fontSize = 15.sp
             )
