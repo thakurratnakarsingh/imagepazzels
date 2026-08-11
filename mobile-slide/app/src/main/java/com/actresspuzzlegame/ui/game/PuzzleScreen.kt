@@ -71,7 +71,6 @@ fun PuzzleScreen(
     var tileBitmaps by remember(imageUrl, rows, columns) {
         mutableStateOf<List<Bitmap>>(emptyList())
     }
-    var imageAspectRatio by remember(imageUrl) { mutableStateOf(4f / 5f) }
     var imageError by remember(imageUrl) { mutableStateOf<String?>(null) }
     var activeTileId by remember(imageUrl, rows, columns) { mutableStateOf<Int?>(null) }
     var dragStartPosition by remember(imageUrl, rows, columns) { mutableStateOf<Int?>(null) }
@@ -107,8 +106,7 @@ fun PuzzleScreen(
             return@LaunchedEffect
         }
 
-        val source = bitmap.bitmap
-        imageAspectRatio = source.width.toFloat() / source.height.toFloat()
+        val source = centerCropToAspectRatio(bitmap.bitmap, PUZZLE_BOARD_ASPECT_RATIO)
         tileBitmaps = sliceBitmap(source, rows, columns)
     }
 
@@ -130,7 +128,7 @@ fun PuzzleScreen(
 
         else -> BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val boardWidth = maxWidth
-            val boardHeight = boardWidth / imageAspectRatio
+            val boardHeight = boardWidth / PUZZLE_BOARD_ASPECT_RATIO
             val tileWidth = boardWidth / columns
             val tileHeight = boardHeight / rows
             val tileWidthPx = with(density) { tileWidth.toPx() }
@@ -283,6 +281,8 @@ fun PuzzleScreen(
     }
 }
 
+private const val PUZZLE_BOARD_ASPECT_RATIO = 0.70f
+
 private fun clampedDragOffset(
     sourcePosition: Int,
     requestedOffset: Offset,
@@ -322,6 +322,23 @@ private fun positionUnderDraggedTile(
         .roundToInt()
         .coerceIn(0, rows - 1)
     return targetRow * columns + targetColumn
+}
+
+private fun centerCropToAspectRatio(source: Bitmap, targetAspectRatio: Float): Bitmap {
+    val sourceAspectRatio = source.width.toFloat() / source.height.toFloat()
+    if (kotlin.math.abs(sourceAspectRatio - targetAspectRatio) < 0.001f) return source
+
+    return if (sourceAspectRatio > targetAspectRatio) {
+        val targetWidth = (source.height * targetAspectRatio).roundToInt()
+            .coerceIn(1, source.width)
+        val left = (source.width - targetWidth) / 2
+        Bitmap.createBitmap(source, left, 0, targetWidth, source.height)
+    } else {
+        val targetHeight = (source.width / targetAspectRatio).roundToInt()
+            .coerceIn(1, source.height)
+        val top = (source.height - targetHeight) / 2
+        Bitmap.createBitmap(source, 0, top, source.width, targetHeight)
+    }
 }
 
 private fun sliceBitmap(source: Bitmap, rows: Int, columns: Int): List<Bitmap> {

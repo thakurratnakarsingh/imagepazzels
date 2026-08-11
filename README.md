@@ -47,6 +47,14 @@ The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracki
 
 The clone uses one blue, teal, white, and gold visual system across its splash, login, model selection, home, game, tutorial, completion, and settings experiences.
 
+Puzzle grid sizes are fixed across the Android client, API responses, progress validation, seed data, and SQL import:
+
+- Levels 1–25: 3×3 (9 tiles)
+- Levels 26–50: 4×4 (16 tiles)
+- Levels 51–1000: 5×5 (25 tiles)
+
+The game board keeps its existing width and uses a taller 0.70 width-to-height aspect ratio. Source images are center-cropped before slicing to avoid stretching the tiles.
+
 The debug APK is generated at `mobile-slide/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Notes

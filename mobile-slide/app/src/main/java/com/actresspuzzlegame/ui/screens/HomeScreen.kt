@@ -68,6 +68,7 @@ import com.actresspuzzlegame.network.GameLevelResponse
 import com.actresspuzzlegame.network.SaveProgressRequest
 import com.actresspuzzlegame.ui.game.PuzzleScreen
 import com.actresspuzzlegame.ui.game.PuzzleViewModel
+import com.actresspuzzlegame.ui.game.gridSizeForLevel
 import com.actresspuzzlegame.ui.theme.PuzzleBlue
 import com.actresspuzzlegame.ui.theme.PuzzleBlueDark
 import kotlinx.coroutines.delay
@@ -319,13 +320,13 @@ fun GameScreen(
                     )
                     gameData != null -> {
                         val data = gameData!!
-                        val fallbackSize = gridSizeForLevel(currentLevel)
+                        val gridSize = gridSizeForLevel(currentLevel)
                         PuzzleScreen(
                             viewModel = puzzleViewModel,
                             imageUrl = data.image.image_url,
-                            rows = (data.rows ?: fallbackSize).coerceIn(2, 8),
-                            columns = (data.columns ?: fallbackSize).coerceIn(2, 8),
-                            shuffleMoves = data.shuffle_moves ?: fallbackSize * fallbackSize * 8,
+                            rows = gridSize,
+                            columns = gridSize,
+                            shuffleMoves = data.shuffle_moves ?: gridSize * gridSize * 8,
                             savedArrangement = data.saved_progress?.tile_arrangement,
                             savedMoveCount = data.saved_progress?.move_count ?: 0,
                             soundEnabled = soundEnabled,
@@ -755,14 +756,6 @@ private fun PrivacyPolicyDialog(content: String?, onDismiss: () -> Unit) {
 }
 
 private data class CompletionUi(val stars: Int, val reward: Int, val moves: Int, val seconds: Int)
-
-private fun gridSizeForLevel(level: Int): Int = when {
-    level <= 2 -> 3
-    level <= 5 -> 4
-    level <= 25 -> 5
-    level <= 100 -> 6
-    else -> 7
-}
 
 private fun formatTime(totalSeconds: Int): String =
     "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)

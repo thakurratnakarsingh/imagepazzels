@@ -1280,6 +1280,21 @@ INSERT INTO `levels` (`level_number`, `title`, `difficulty`, `rows`, `columns`, 
 INSERT INTO `levels` (`level_number`, `title`, `difficulty`, `rows`, `columns`, `shuffle_count`, `max_moves_3_stars`, `max_moves_2_stars`, `reward_points`, `is_locked_default`) VALUES (999, 'Level 999', 'expert', 7, 7, 400, 600, 1000, 70, 1);
 INSERT INTO `levels` (`level_number`, `title`, `difficulty`, `rows`, `columns`, `shuffle_count`, `max_moves_3_stars`, `max_moves_2_stars`, `reward_points`, `is_locked_default`) VALUES (1000, 'Level 1000', 'expert', 7, 7, 400, 600, 1000, 70, 1);
 
+-- Normalize puzzle grids: 1-25 = 3x3, 26-50 = 4x4, 51-1000 = 5x5.
+UPDATE `levels`
+SET
+  `rows` = CASE
+    WHEN `level_number` <= 25 THEN 3
+    WHEN `level_number` <= 50 THEN 4
+    ELSE 5
+  END,
+  `columns` = CASE
+    WHEN `level_number` <= 25 THEN 3
+    WHEN `level_number` <= 50 THEN 4
+    ELSE 5
+  END
+WHERE `level_number` BETWEEN 1 AND 1000;
+
 -- --------------------------------------------------------
 -- Table structure for table `user_level_assignments`
 -- --------------------------------------------------------

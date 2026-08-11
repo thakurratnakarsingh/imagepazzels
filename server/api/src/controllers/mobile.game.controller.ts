@@ -4,6 +4,7 @@ import { Level, UserLevelAssignment, ActressImage, UserActressSelection, PuzzleS
 import { randomUUID } from 'crypto';
 import { Op } from 'sequelize';
 import { sequelize } from '../config/database';
+import { gridSizeForLevel } from '../utilities/levelGrid';
 
 const assetUrl = (relativePath: string) => {
   const base = (process.env.API_BASE_URL || 'http://10.184.70.192:5000').replace(/\/$/, '');
@@ -109,6 +110,7 @@ export const getLevelAssignment = async (req: AuthRequest, res: Response, next: 
       savedProgress = await UserGameProgress.findOne({ where: { session_id: session.id } });
     }
 
+    const gridSize = gridSizeForLevel(level.level_number);
     res.json({
       success: true,
       data: {
@@ -117,8 +119,8 @@ export const getLevelAssignment = async (req: AuthRequest, res: Response, next: 
           levelNumber: level.level_number,
           title: level.title,
           difficulty: level.difficulty,
-          rows: level.rows,
-          columns: level.columns,
+          rows: gridSize,
+          columns: gridSize,
           shuffleMoves: level.shuffle_count,
           rewardPoints: level.reward_points
         },
@@ -177,7 +179,8 @@ export const saveProgress = async (req: AuthRequest, res: Response, next: NextFu
     if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
     if (!session) return res.status(403).json({ success: false, message: 'Invalid puzzle session' });
 
-    const tileCount = level.rows * level.columns;
+    const gridSize = gridSizeForLevel(level.level_number);
+    const tileCount = gridSize * gridSize;
     const validArrangement = Array.isArray(tileArrangement)
       && tileArrangement.length === tileCount
       && tileArrangement.every(Number.isInteger)
@@ -386,11 +389,12 @@ export const getGameLevelImage = async (req: AuthRequest, res: Response, next: N
       where: { user_id: req.user!.id, level_id: levelRecord.id, session_id: session.id }
     });
 
+    const gridSize = gridSizeForLevel(levelRecord.level_number);
     res.json({
       level: selectedImage.level_number,
       level_id: levelRecord.id,
-      rows: levelRecord.rows,
-      columns: levelRecord.columns,
+      rows: gridSize,
+      columns: gridSize,
       shuffle_moves: levelRecord.shuffle_count,
       max_moves_3_stars: levelRecord.max_moves_3_stars,
       max_moves_2_stars: levelRecord.max_moves_2_stars,
