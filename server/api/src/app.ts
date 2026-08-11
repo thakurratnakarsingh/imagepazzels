@@ -14,7 +14,9 @@ app.use(helmet({
   crossOriginResourcePolicy: false, // allow images to be loaded cross-origin
 }));
 app.use(cors({
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : '*',
+  origin: process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    : '*',
 }));
 app.use(morgan('dev'));
 app.use(express.json());
