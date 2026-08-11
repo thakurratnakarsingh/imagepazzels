@@ -31,10 +31,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -50,7 +51,7 @@ import androidx.compose.ui.zIndex
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
-import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun PuzzleScreen(
@@ -75,6 +76,7 @@ fun PuzzleScreen(
     var activeTileId by remember(imageUrl, rows, columns) { mutableStateOf<Int?>(null) }
     var dragStartPosition by remember(imageUrl, rows, columns) { mutableStateOf<Int?>(null) }
     var dragOffset by remember(imageUrl, rows, columns) { mutableStateOf(Offset.Zero) }
+    var hoveredPosition by remember(imageUrl, rows, columns) { mutableIntStateOf(-1) }
     val toneGenerator = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 45) }
     val density = LocalDensity.current
 
@@ -143,14 +145,13 @@ fun PuzzleScreen(
             ) {
                 state.tiles.forEach { tile ->
                     key(tile.id) {
-                        val isEmpty = tile.id == state.tiles.lastIndex && !state.isCompleted
                         val row = tile.currentPosition / columns
                         val column = tile.currentPosition % columns
                         val animatedX by animateDpAsState(
                             targetValue = tileWidth * column,
                             animationSpec = spring(
                                 dampingRatio = Spring.DampingRatioNoBouncy,
-                                stiffness = Spring.StiffnessMedium
+                                stiffness = Spring.StiffnessHigh
                             ),
                             label = "tile_${tile.id}_x"
                         )
@@ -158,18 +159,14 @@ fun PuzzleScreen(
                             targetValue = tileHeight * row,
                             animationSpec = spring(
                                 dampingRatio = Spring.DampingRatioNoBouncy,
-                                stiffness = Spring.StiffnessMedium
+                                stiffness = Spring.StiffnessHigh
                             ),
                             label = "tile_${tile.id}_y"
                         )
-                        val startPosition = dragStartPosition
-                        val followsDrag = activeTileId != null && startPosition != null &&
-                            positionIsInSlidePath(
-                                position = tile.currentPosition,
-                                startPosition = startPosition,
-                                emptyPosition = state.emptyTilePosition,
-                                columns = columns
-                            )
+                        val followsDrag = tile.id == activeTileId
+                        val isDropTarget = activeTileId != null &&
+                            tile.id != activeTileId &&
+                            tile.currentPosition == hoveredPosition
                         val dragTranslationX by animateFloatAsState(
                             targetValue = if (followsDrag) dragOffset.x else 0f,
                             animationSpec = spring(
@@ -192,57 +189,52 @@ fun PuzzleScreen(
                                 translationX = dragTranslationX
                                 translationY = dragTranslationY
                                 shadowElevation = if (tile.id == activeTileId) 12f else 0f
+                                scaleX = if (tile.id == activeTileId) 1.04f else 1f
+                                scaleY = if (tile.id == activeTileId) 1.04f else 1f
                             }
-                            .zIndex(if (tile.id == activeTileId) 2f else if (followsDrag) 1f else 0f)
+                            .zIndex(if (tile.id == activeTileId) 2f else 0f)
                             .size(width = tileWidth, height = tileHeight)
-                            .border(0.6.dp, Color.White.copy(alpha = 0.9f))
+                            .border(
+                                width = if (isDropTarget) 3.dp else 0.6.dp,
+                                color = if (isDropTarget) {
+                                    Color(0xFFFFD54F)
+                                } else {
+                                    Color.White.copy(alpha = 0.9f)
+                                }
+                            )
                             .pointerInput(
                                 tile.id,
                                 tile.currentPosition,
-                                state.emptyTilePosition,
                                 state.canMove,
                                 state.isCompleted
                             ) {
-                                if (isEmpty || state.isCompleted || !state.canMove) return@pointerInput
+                                if (state.isCompleted || !state.canMove) return@pointerInput
                                 detectDragGestures(
                                     onDragStart = {
-                                        if (slideAxis(
-                                                tile.currentPosition,
-                                                state.emptyTilePosition,
-                                                columns
-                                            ) != null
-                                        ) {
-                                            activeTileId = tile.id
-                                            dragStartPosition = tile.currentPosition
-                                            dragOffset = Offset.Zero
-                                        }
+                                        activeTileId = tile.id
+                                        dragStartPosition = tile.currentPosition
+                                        hoveredPosition = tile.currentPosition
+                                        dragOffset = Offset.Zero
                                     },
                                     onDragCancel = {
                                         activeTileId = null
                                         dragStartPosition = null
+                                        hoveredPosition = -1
                                         dragOffset = Offset.Zero
                                     },
                                     onDragEnd = {
-                                        val position = dragStartPosition
-                                        val axis = position?.let {
-                                            slideAxis(it, state.emptyTilePosition, columns)
-                                        }
-                                        val distance = when (axis) {
-                                            SlideAxis.Horizontal -> abs(dragOffset.x)
-                                            SlideAxis.Vertical -> abs(dragOffset.y)
-                                            null -> 0f
-                                        }
-                                        val cellSize = if (axis == SlideAxis.Horizontal) {
-                                            tileWidthPx
-                                        } else {
-                                            tileHeightPx
-                                        }
-                                        val moved = position != null &&
-                                            distance >= cellSize * DRAG_COMMIT_FRACTION &&
-                                            viewModel.onTileSlid(position)
+                                        val sourcePosition = dragStartPosition
+                                        val targetPosition = hoveredPosition
+                                        val moved = sourcePosition != null &&
+                                            targetPosition != sourcePosition &&
+                                            viewModel.onTileDropped(
+                                                sourcePosition,
+                                                targetPosition
+                                            )
 
                                         activeTileId = null
                                         dragStartPosition = null
+                                        hoveredPosition = -1
                                         dragOffset = Offset.Zero
 
                                         if (moved) {
@@ -256,48 +248,34 @@ fun PuzzleScreen(
                                         }
                                     }
                                 ) { change, dragAmount ->
-                                    val position = dragStartPosition ?: return@detectDragGestures
-                                    val axis = slideAxis(
-                                        position,
-                                        state.emptyTilePosition,
-                                        columns
-                                    ) ?: return@detectDragGestures
-                                    val direction = slideDirection(
-                                        position,
-                                        state.emptyTilePosition
+                                    val sourcePosition = dragStartPosition
+                                        ?: return@detectDragGestures
+                                    dragOffset = clampedDragOffset(
+                                        sourcePosition = sourcePosition,
+                                        requestedOffset = dragOffset + dragAmount,
+                                        tileWidthPx = tileWidthPx,
+                                        tileHeightPx = tileHeightPx,
+                                        rows = rows,
+                                        columns = columns
                                     )
-                                    dragOffset = when (axis) {
-                                        SlideAxis.Horizontal -> Offset(
-                                            x = directionalDrag(
-                                                dragOffset.x + dragAmount.x,
-                                                direction,
-                                                tileWidthPx
-                                            ),
-                                            y = 0f
-                                        )
-                                        SlideAxis.Vertical -> Offset(
-                                            x = 0f,
-                                            y = directionalDrag(
-                                                dragOffset.y + dragAmount.y,
-                                                direction,
-                                                tileHeightPx
-                                            )
-                                        )
-                                    }
+                                    hoveredPosition = positionUnderDraggedTile(
+                                        sourcePosition = sourcePosition,
+                                        dragOffset = dragOffset,
+                                        tileWidthPx = tileWidthPx,
+                                        tileHeightPx = tileHeightPx,
+                                        rows = rows,
+                                        columns = columns
+                                    )
                                     change.consume()
                                 }
                             }
 
-                        if (isEmpty) {
-                            Box(tileModifier.background(Color(0xFF172638)))
-                        } else {
-                            Image(
-                                bitmap = tileBitmaps[tile.bitmapRegion].asImageBitmap(),
-                                contentDescription = "Puzzle tile ${tile.id + 1}",
-                                contentScale = ContentScale.FillBounds,
-                                modifier = tileModifier
-                            )
-                        }
+                        Image(
+                            bitmap = tileBitmaps[tile.bitmapRegion].asImageBitmap(),
+                            contentDescription = "Puzzle tile ${tile.id + 1}",
+                            contentScale = ContentScale.FillBounds,
+                            modifier = tileModifier
+                        )
                     }
                 }
             }
@@ -305,38 +283,45 @@ fun PuzzleScreen(
     }
 }
 
-private const val DRAG_COMMIT_FRACTION = 0.22f
-
-private enum class SlideAxis { Horizontal, Vertical }
-
-private fun slideAxis(tilePosition: Int, emptyPosition: Int, columns: Int): SlideAxis? = when {
-    tilePosition == emptyPosition -> null
-    tilePosition / columns == emptyPosition / columns &&
-        abs(tilePosition - emptyPosition) == 1 -> SlideAxis.Horizontal
-    tilePosition % columns == emptyPosition % columns &&
-        abs(tilePosition - emptyPosition) == columns -> SlideAxis.Vertical
-    else -> null
+private fun clampedDragOffset(
+    sourcePosition: Int,
+    requestedOffset: Offset,
+    tileWidthPx: Float,
+    tileHeightPx: Float,
+    rows: Int,
+    columns: Int
+): Offset {
+    val sourceRow = sourcePosition / columns
+    val sourceColumn = sourcePosition % columns
+    return Offset(
+        x = requestedOffset.x.coerceIn(
+            minimumValue = -sourceColumn * tileWidthPx,
+            maximumValue = (columns - sourceColumn - 1) * tileWidthPx
+        ),
+        y = requestedOffset.y.coerceIn(
+            minimumValue = -sourceRow * tileHeightPx,
+            maximumValue = (rows - sourceRow - 1) * tileHeightPx
+        )
+    )
 }
 
-private fun slideDirection(tilePosition: Int, emptyPosition: Int): Float =
-    if (tilePosition < emptyPosition) 1f else -1f
-
-private fun directionalDrag(value: Float, direction: Float, maximum: Float): Float =
-    (value * direction).coerceIn(0f, maximum) * direction
-
-private fun positionIsInSlidePath(
-    position: Int,
-    startPosition: Int,
-    emptyPosition: Int,
+private fun positionUnderDraggedTile(
+    sourcePosition: Int,
+    dragOffset: Offset,
+    tileWidthPx: Float,
+    tileHeightPx: Float,
+    rows: Int,
     columns: Int
-): Boolean {
-    return when (slideAxis(startPosition, emptyPosition, columns)) {
-        SlideAxis.Horizontal -> position / columns == startPosition / columns &&
-            position in minOf(startPosition, emptyPosition)..maxOf(startPosition, emptyPosition)
-        SlideAxis.Vertical -> position % columns == startPosition % columns &&
-            position in minOf(startPosition, emptyPosition)..maxOf(startPosition, emptyPosition)
-        null -> false
-    }
+): Int {
+    val sourceRow = sourcePosition / columns
+    val sourceColumn = sourcePosition % columns
+    val targetColumn = (sourceColumn + dragOffset.x / tileWidthPx)
+        .roundToInt()
+        .coerceIn(0, columns - 1)
+    val targetRow = (sourceRow + dragOffset.y / tileHeightPx)
+        .roundToInt()
+        .coerceIn(0, rows - 1)
+    return targetRow * columns + targetColumn
 }
 
 private fun sliceBitmap(source: Bitmap, rows: Int, columns: Int): List<Bitmap> {

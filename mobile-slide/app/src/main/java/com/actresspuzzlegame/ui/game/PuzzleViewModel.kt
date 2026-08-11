@@ -25,12 +25,11 @@ class PuzzleViewModel : ViewModel() {
                     arrangement.toSet() == (0 until totalTiles).toSet()
             }
 
-        val tileIds = restoredIds ?: createSolvableShuffle(
-            rows = rows,
-            columns = columns,
+        val tileIds = restoredIds ?: createSwapShuffle(
+            totalTiles = totalTiles,
             moves = shuffleMoves.coerceAtLeast(totalTiles * 2)
         )
-        val emptyPos = tileIds.indexOf(totalTiles - 1)
+        val backendAnchorPosition = tileIds.indexOf(totalTiles - 1)
         val tiles = tileIds.mapIndexed { position, id ->
             Tile(id = id, currentPosition = position, bitmapRegion = id)
         }
@@ -40,45 +39,38 @@ class PuzzleViewModel : ViewModel() {
             tiles = tiles,
             rows = rows,
             columns = columns,
-            emptyTilePosition = emptyPos,
+            // The API requires the position of tile N-1. It remains a visible tile
+            // in swap mode and is used only as a progress-format anchor.
+            emptyTilePosition = backendAnchorPosition,
             moveCount = savedMoveCount.coerceAtLeast(0),
             isCompleted = checkWinCondition(tiles)
         )
     }
 
     /**
-     * Slides a tile into the adjacent empty cell. Keeping one adjacent swap per move
-     * preserves the original client's saved arrangements, shuffle rules, and server
-     * scoring while this client supplies the finger-driven interaction.
+     * Drops one visible tile onto another visible tile and exchanges their positions.
+     * Any two different board positions are valid targets.
      */
-    fun onTileSlid(tilePosition: Int): Boolean {
+    fun onTileDropped(sourcePosition: Int, targetPosition: Int): Boolean {
         val currentState = _state.value
         if (currentState.isCompleted || !currentState.canMove) return false
-        if (tilePosition !in currentState.tiles.indices) return false
-
-        val emptyPos = currentState.emptyTilePosition
-        val cols = currentState.columns
-        if (tilePosition == emptyPos) return false
-
-        val tileRow = tilePosition / cols
-        val tileColumn = tilePosition % cols
-        val emptyRow = emptyPos / cols
-        val emptyColumn = emptyPos % cols
-        val isAdjacent = kotlin.math.abs(tileRow - emptyRow) +
-            kotlin.math.abs(tileColumn - emptyColumn) == 1
-        if (!isAdjacent) return false
+        if (sourcePosition !in currentState.tiles.indices) return false
+        if (targetPosition !in currentState.tiles.indices) return false
+        if (sourcePosition == targetPosition) return false
 
         val newTiles = currentState.tiles.toMutableList()
-        val emptyTile = currentState.tiles[emptyPos]
-        val selectedTile = currentState.tiles[tilePosition]
-        newTiles[emptyPos] = selectedTile.copy(currentPosition = emptyPos)
-        newTiles[tilePosition] = emptyTile.copy(currentPosition = tilePosition)
+        val sourceTile = currentState.tiles[sourcePosition]
+        val targetTile = currentState.tiles[targetPosition]
+        newTiles[targetPosition] = sourceTile.copy(currentPosition = targetPosition)
+        newTiles[sourcePosition] = targetTile.copy(currentPosition = sourcePosition)
 
         val isComplete = checkWinCondition(newTiles)
         _state.update {
             it.copy(
                 tiles = newTiles,
-                emptyTilePosition = tilePosition,
+                emptyTilePosition = newTiles.indexOfFirst { tile ->
+                    tile.id == newTiles.lastIndex
+                },
                 moveCount = currentState.moveCount + 1,
                 isCompleted = isComplete
             )
@@ -97,34 +89,21 @@ class PuzzleViewModel : ViewModel() {
         return tiles.all { it.id == it.currentPosition }
     }
 
-    private fun createSolvableShuffle(rows: Int, columns: Int, moves: Int): List<Int> {
-        val total = rows * columns
-        val arrangement = (0 until total).toMutableList()
-        var emptyPosition = total - 1
-        var previousEmptyPosition = -1
-
+    private fun createSwapShuffle(totalTiles: Int, moves: Int): List<Int> {
+        val arrangement = (0 until totalTiles).toMutableList()
         repeat(moves) {
-            val emptyRow = emptyPosition / columns
-            val emptyColumn = emptyPosition % columns
-            val candidates = buildList {
-                if (emptyRow > 0) add(emptyPosition - columns)
-                if (emptyRow < rows - 1) add(emptyPosition + columns)
-                if (emptyColumn > 0) add(emptyPosition - 1)
-                if (emptyColumn < columns - 1) add(emptyPosition + 1)
-            }.filter { it != previousEmptyPosition }
-
-            val nextPosition = (candidates.ifEmpty { listOf(previousEmptyPosition) }).random()
-            arrangement[emptyPosition] = arrangement[nextPosition]
-            arrangement[nextPosition] = total - 1
-            previousEmptyPosition = emptyPosition
-            emptyPosition = nextPosition
+            val first = arrangement.indices.random()
+            var second = arrangement.indices.random()
+            while (second == first) second = arrangement.indices.random()
+            val firstTile = arrangement[first]
+            arrangement[first] = arrangement[second]
+            arrangement[second] = firstTile
         }
 
         if (arrangement.withIndex().all { (index, id) -> index == id }) {
-            val emptyRow = emptyPosition / columns
-            val neighbor = if (emptyRow > 0) emptyPosition - columns else emptyPosition + columns
-            arrangement[emptyPosition] = arrangement[neighbor]
-            arrangement[neighbor] = total - 1
+            val firstTile = arrangement[0]
+            arrangement[0] = arrangement[1]
+            arrangement[1] = firstTile
         }
 
         return arrangement

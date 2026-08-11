@@ -54,6 +54,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -625,14 +626,14 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.Black
                 )
                 Text(
-                    "Slide the picture tiles",
+                    "Drag and swap the tiles",
                     color = Color(0xFF243553),
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Black,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    "Drag a tile toward the empty space",
+                    "Drop any tile on another tile to exchange them",
                     color = Color(0xFF6B7587),
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
@@ -645,7 +646,7 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
                     val colors = listOf(
                         Color(0xFF7C4DFF), Color(0xFFFF5C8A), Color(0xFFFFB74D),
                         Color(0xFF42A5F5), Color(0xFF26C6DA), Color(0xFF66BB6A),
-                        Color(0xFFEC407A), Color(0xFFFFCA28)
+                        Color(0xFFEC407A), Color(0xFFFFCA28), Color(0xFF8D6E63)
                     )
 
                     drawRoundRect(
@@ -654,25 +655,25 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
                         size = size
                     )
 
-                    drawRoundRect(
-                        color = Color(0xFF26364D),
-                        topLeft = Offset(gap + 2f * (tile + gap), gap + 2f * (tile + gap)),
-                        size = Size(tile, tile),
-                        cornerRadius = CornerRadius(12f, 12f)
-                    )
-
-                    var colorIndex = 0
                     repeat(9) { position ->
-                        if (position == 7 || position == 8) return@repeat
+                        if (position == 7) return@repeat
                         val row = position / 3
                         val column = position % 3
                         drawRoundRect(
-                            color = colors[colorIndex++ % colors.size],
+                            color = colors[position],
                             topLeft = Offset(gap + column * (tile + gap), gap + row * (tile + gap)),
                             size = Size(tile, tile),
                             cornerRadius = CornerRadius(12f, 12f)
                         )
                     }
+
+                    drawRoundRect(
+                        color = Color(0xFFFFD54F),
+                        topLeft = Offset(gap + 2f * (tile + gap), gap + 2f * (tile + gap)),
+                        size = Size(tile, tile),
+                        cornerRadius = CornerRadius(12f, 12f),
+                        style = Stroke(width = 6f)
+                    )
 
                     val movingX = gap + (1f + slideProgress) * (tile + gap)
                     val movingY = gap + 2f * (tile + gap)
@@ -696,9 +697,9 @@ private fun GameTutorialOverlay(onDismiss: () -> Unit) {
                 }
 
                 Spacer(Modifier.height(14.dp))
-                TutorialTip("1", "Find the empty dark square")
-                TutorialTip("2", "Drag any tile directly beside it toward the space")
-                TutorialTip("3", "Release to slide the tile into place")
+                TutorialTip("1", "Press and drag any picture tile")
+                TutorialTip("2", "Move it over the tile you want to replace")
+                TutorialTip("3", "Release and both tiles swap positions")
                 Spacer(Modifier.height(18.dp))
                 Button(
                     onClick = onDismiss,
