@@ -68,14 +68,16 @@ import com.actresspuzzlegame.network.GameLevelResponse
 import com.actresspuzzlegame.network.SaveProgressRequest
 import com.actresspuzzlegame.ui.game.PuzzleScreen
 import com.actresspuzzlegame.ui.game.PuzzleViewModel
+import com.actresspuzzlegame.ui.theme.PuzzleBlue
+import com.actresspuzzlegame.ui.theme.PuzzleBlueDark
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
 
-private val GameBlue = Color(0xFF4D8BC2)
-private val GameBlueDark = Color(0xFF315F9F)
-private val PanelBlue = Color(0xFF326FC1)
+private val GameBlue = PuzzleBlue
+private val GameBlueDark = PuzzleBlueDark
+private val PanelBlue = PuzzleBlueDark
 
 @Composable
 fun GameScreen(

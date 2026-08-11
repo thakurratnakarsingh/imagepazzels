@@ -12,6 +12,7 @@ import com.actresspuzzlegame.ui.screens.ActressSelectionScreen
 import com.actresspuzzlegame.ui.screens.GameHomeScreen
 import com.actresspuzzlegame.ui.screens.GameScreen
 import com.actresspuzzlegame.ui.screens.LoginScreen
+import com.actresspuzzlegame.ui.screens.MAX_SELECTED_MODELS
 import com.actresspuzzlegame.ui.screens.SplashScreen
 
 @Composable
@@ -25,6 +26,8 @@ fun AppNavigation() {
         .orEmpty()
         .split(',')
         .mapNotNull { it.toIntOrNull() }
+        .distinct()
+        .take(MAX_SELECTED_MODELS)
 
     fun authenticatedDestination(): String =
         if (selectedActressIds().isEmpty()) "actress_selection" else "home"
@@ -54,7 +57,10 @@ fun AppNavigation() {
                 initialSelectedIds = selectedActressIds().toSet(),
                 onSelectionConfirmed = { ids ->
                 preferences.edit()
-                    .putString("selected_actress_ids", ids.joinToString(","))
+                    .putString(
+                        "selected_actress_ids",
+                        ids.distinct().take(MAX_SELECTED_MODELS).joinToString(",")
+                    )
                     .apply()
                 navController.navigate("home") {
                     popUpTo("actress_selection") { inclusive = true }

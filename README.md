@@ -43,6 +43,9 @@ The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracki
 2. It uses the same `API_BASE_URL` Gradle property and the same mobile API, database, uploaded images, admin configuration, authentication, progress, and completion endpoints as the original client.
 3. Its application ID is `com.actresspuzzlegame.slide`, so it can be installed beside the original app.
 4. Every image tile remains visible. Drag any tile onto any other tile and release; the two tiles exchange positions, with the displaced tile moving directly back to the dragged tile's original position.
+5. Users can select up to 10 models. The selection screen enforces the limit, and the game home screen displays every selected model in a two-row collection.
+
+The clone uses one blue, teal, white, and gold visual system across its splash, login, model selection, home, game, tutorial, completion, and settings experiences.
 
 The debug APK is generated at `mobile-slide/app/build/outputs/apk/debug/app-debug.apk`.
 

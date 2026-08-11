@@ -8,19 +8,13 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,11 +24,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.actresspuzzlegame.network.ApiClient
 import com.actresspuzzlegame.network.GuestAuthRequest
+import com.actresspuzzlegame.ui.theme.PuzzleAqua
+import com.actresspuzzlegame.ui.theme.PuzzleBackground
+import com.actresspuzzlegame.ui.theme.PuzzleBlueDark
+import com.actresspuzzlegame.ui.theme.PuzzleGold
+import com.actresspuzzlegame.ui.theme.PuzzleOrange
+import com.actresspuzzlegame.ui.theme.PuzzlePrimaryButton
+import com.actresspuzzlegame.ui.theme.PuzzleTeal
 import kotlinx.coroutines.launch
 
 @Composable
@@ -88,23 +86,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF3F1D91), Color(0xFF7B2CBF), Color(0xFFFF5D8F), Color(0xFFFF9A5A))
-                )
-            )
-            .statusBarsPadding()
-    ) {
+    PuzzleBackground(Modifier.statusBarsPadding()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 30.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("IMAGE PUZZLE", color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Black)
             Text(
-                "Slide. Solve. Celebrate.",
+                "Drag. Swap. Complete.",
                 color = Color.White.copy(alpha = 0.75f),
                 fontSize = 15.sp
             )
@@ -115,27 +104,30 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 val gap = 8f
                 val tileSize = (size.width - gap * 4) / 3f
                 val colors = listOf(
-                    Color(0xFFFFD740), Color(0xFF40C4FF), Color(0xFFFF4081),
-                    Color(0xFF69F0AE), Color.White, Color(0xFFFF8A65),
-                    Color(0xFFB388FF), Color(0xFFFFD180)
+                    PuzzleGold, PuzzleAqua, PuzzleTeal,
+                    Color.White, PuzzleBlueDark, PuzzleOrange,
+                    Color(0xFF9CEBE8), Color(0xFFFFE9A6), Color(0xFF78A8D8)
                 )
-                var colorIndex = 0
-                for (row in 0..2) {
-                    for (column in 0..2) {
-                        if (row == 1 && column == 2) continue
-                        val extraX = if (row == 2 && column == 2) -tileSize * 0.22f * motion else 0f
-                        val extraY = if (row == 2 && column == 2) -tileSize * 0.72f * motion else 0f
-                        val topLeft = Offset(
-                            gap + column * (tileSize + gap) + extraX,
-                            gap + row * (tileSize + gap) + extraY
-                        )
-                        drawRoundRect(
-                            color = colors[colorIndex++ % colors.size],
-                            topLeft = topLeft,
-                            size = Size(tileSize, tileSize),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(18f, 18f)
-                        )
+                repeat(9) { position ->
+                    val row = position / 3
+                    val column = position % 3
+                    val swapTarget = when (position) {
+                        2 -> 6
+                        6 -> 2
+                        else -> position
                     }
+                    val targetRow = swapTarget / 3
+                    val targetColumn = swapTarget % 3
+                    val topLeft = Offset(
+                        x = gap + (column + (targetColumn - column) * motion) * (tileSize + gap),
+                        y = gap + (row + (targetRow - row) * motion) * (tileSize + gap)
+                    )
+                    drawRoundRect(
+                        color = colors[position],
+                        topLeft = topLeft,
+                        size = Size(tileSize, tileSize),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(18f, 18f)
+                    )
                 }
             }
 
@@ -154,22 +146,12 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             }
 
             Spacer(Modifier.weight(1f))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .shadow(16.dp, RoundedCornerShape(22.dp))
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(Brush.horizontalGradient(listOf(Color(0xFFFFE15D), Color(0xFFFFA443))))
-                    .clickable(enabled = !isLoading, onClick = ::loginAsGuest),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(color = Color(0xFF4A2380), modifier = Modifier.size(28.dp))
-                } else {
-                    Text("LET'S PLAY  ▶", color = Color(0xFF4A2380), fontSize = 21.sp, fontWeight = FontWeight.Black)
-                }
-            }
+            PuzzlePrimaryButton(
+                text = "LET'S PLAY  ▶",
+                onClick = ::loginAsGuest,
+                enabled = !isLoading,
+                loading = isLoading
+            )
         }
     }
 }
