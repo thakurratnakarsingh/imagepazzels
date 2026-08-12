@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import axios from 'axios';
 import api, { ASSET_BASE_URL } from '../services/api';
 import { SplashItem } from '../types';
 
@@ -94,7 +95,10 @@ const SplashManagement = () => {
       fetchSplashes();
     } catch (err) {
       console.error('Failed to save splash', err);
-      alert('An error occurred while saving.');
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : 'An error occurred while saving.';
+      alert(message);
     }
   };
 

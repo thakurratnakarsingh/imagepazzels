@@ -16,11 +16,24 @@ export class SplashScreen extends Model {
 
 SplashScreen.init({
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  name: { type: DataTypes.STRING, allowNull: false },
+  // Keep the API/admin vocabulary while using the existing production columns.
+  name: { type: DataTypes.STRING, allowNull: false, field: 'title' },
   subtitle: { type: DataTypes.STRING, allowNull: true },
   cta_text: { type: DataTypes.STRING, allowNull: true },
   image_url: { type: DataTypes.STRING, allowNull: false },
-  time: { type: DataTypes.INTEGER, defaultValue: 3 },
+  time: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 3000,
+    field: 'display_duration',
+    get() {
+      const milliseconds = this.getDataValue('time');
+      return Math.max(1, Math.round(milliseconds / 1000));
+    },
+    set(seconds: number) {
+      this.setDataValue('time', Number(seconds) * 1000);
+    },
+  },
   is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
   start_date: { type: DataTypes.DATE, allowNull: true },
   end_date: { type: DataTypes.DATE, allowNull: true },
@@ -31,4 +44,3 @@ SplashScreen.init({
   timestamps: true,
   underscored: true
 });
-
