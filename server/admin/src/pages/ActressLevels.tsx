@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Chip, IconButton } from '@mui/material';
 import { CloudUpload as UploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api, { ASSET_BASE_URL } from '../services/api';
 import { ActressLevelItem } from '../types';
 
@@ -27,9 +28,12 @@ const ActressLevels = () => {
       } else {
         setErrorMsg(res.data.message || 'Failed to fetch levels');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || 'Network Error. Did you restart the backend?');
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : 'Unable to load levels';
+      setErrorMsg(message);
     }
   };
 
@@ -41,7 +45,10 @@ const ActressLevels = () => {
       fetchLevels(); // Refresh the list
     } catch (err) {
       console.error(err);
-      alert('Failed to upload image');
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : 'Failed to upload image';
+      alert(message);
     }
   };
 
@@ -52,7 +59,10 @@ const ActressLevels = () => {
       fetchLevels();
     } catch (err) {
       console.error(err);
-      alert('Failed to delete image');
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : 'Failed to delete image';
+      alert(message);
     }
   };
 

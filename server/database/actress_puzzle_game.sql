@@ -184,6 +184,7 @@ INSERT INTO `actresses` (`slug`, `name`, `biography`, `country`, `thumbnail_imag
 CREATE TABLE `actress_images` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `actress_id` int(11) UNSIGNED NOT NULL,
+  `level_number` int(11) NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `alt_text` varchar(255) DEFAULT NULL,
   `image_url` varchar(255) NOT NULL,
@@ -199,41 +200,42 @@ CREATE TABLE `actress_images` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `actress_images_actress_level_unique` (`actress_id`,`level_number`),
   KEY `actress_images_actress_id_foreign` (`actress_id`),
   CONSTRAINT `actress_images_actress_id_foreign` FOREIGN KEY (`actress_id`) REFERENCES `actresses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert 20 Sample Images (2 per actress)
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (1, 'Image 1 for Actress 1', 'image-1-1.jpg', 'thumb-1-1.jpg', 1080, 1350, 1),
-  (1, 'Image 2 for Actress 1', 'image-1-2.jpg', 'thumb-1-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (2, 'Image 1 for Actress 2', 'image-2-1.jpg', 'thumb-2-1.jpg', 1080, 1350, 1),
-  (2, 'Image 2 for Actress 2', 'image-2-2.jpg', 'thumb-2-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (3, 'Image 1 for Actress 3', 'image-3-1.jpg', 'thumb-3-1.jpg', 1080, 1350, 1),
-  (3, 'Image 2 for Actress 3', 'image-3-2.jpg', 'thumb-3-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (4, 'Image 1 for Actress 4', 'image-4-1.jpg', 'thumb-4-1.jpg', 1080, 1350, 1),
-  (4, 'Image 2 for Actress 4', 'image-4-2.jpg', 'thumb-4-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (5, 'Image 1 for Actress 5', 'image-5-1.jpg', 'thumb-5-1.jpg', 1080, 1350, 1),
-  (5, 'Image 2 for Actress 5', 'image-5-2.jpg', 'thumb-5-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (6, 'Image 1 for Actress 6', 'image-6-1.jpg', 'thumb-6-1.jpg', 1080, 1350, 1),
-  (6, 'Image 2 for Actress 6', 'image-6-2.jpg', 'thumb-6-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (7, 'Image 1 for Actress 7', 'image-7-1.jpg', 'thumb-7-1.jpg', 1080, 1350, 1),
-  (7, 'Image 2 for Actress 7', 'image-7-2.jpg', 'thumb-7-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (8, 'Image 1 for Actress 8', 'image-8-1.jpg', 'thumb-8-1.jpg', 1080, 1350, 1),
-  (8, 'Image 2 for Actress 8', 'image-8-2.jpg', 'thumb-8-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (9, 'Image 1 for Actress 9', 'image-9-1.jpg', 'thumb-9-1.jpg', 1080, 1350, 1),
-  (9, 'Image 2 for Actress 9', 'image-9-2.jpg', 'thumb-9-2.jpg', 1080, 1350, 1);
-INSERT INTO `actress_images` (`actress_id`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES 
-  (10, 'Image 1 for Actress 10', 'image-10-1.jpg', 'thumb-10-1.jpg', 1080, 1350, 1),
-  (10, 'Image 2 for Actress 10', 'image-10-2.jpg', 'thumb-10-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (1, 1, 'Image 1 for Actress 1', 'image-1-1.jpg', 'thumb-1-1.jpg', 1080, 1350, 1),
+  (1, 2, 'Image 2 for Actress 1', 'image-1-2.jpg', 'thumb-1-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (2, 1, 'Image 1 for Actress 2', 'image-2-1.jpg', 'thumb-2-1.jpg', 1080, 1350, 1),
+  (2, 2, 'Image 2 for Actress 2', 'image-2-2.jpg', 'thumb-2-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (3, 1, 'Image 1 for Actress 3', 'image-3-1.jpg', 'thumb-3-1.jpg', 1080, 1350, 1),
+  (3, 2, 'Image 2 for Actress 3', 'image-3-2.jpg', 'thumb-3-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (4, 1, 'Image 1 for Actress 4', 'image-4-1.jpg', 'thumb-4-1.jpg', 1080, 1350, 1),
+  (4, 2, 'Image 2 for Actress 4', 'image-4-2.jpg', 'thumb-4-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (5, 1, 'Image 1 for Actress 5', 'image-5-1.jpg', 'thumb-5-1.jpg', 1080, 1350, 1),
+  (5, 2, 'Image 2 for Actress 5', 'image-5-2.jpg', 'thumb-5-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (6, 1, 'Image 1 for Actress 6', 'image-6-1.jpg', 'thumb-6-1.jpg', 1080, 1350, 1),
+  (6, 2, 'Image 2 for Actress 6', 'image-6-2.jpg', 'thumb-6-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (7, 1, 'Image 1 for Actress 7', 'image-7-1.jpg', 'thumb-7-1.jpg', 1080, 1350, 1),
+  (7, 2, 'Image 2 for Actress 7', 'image-7-2.jpg', 'thumb-7-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (8, 1, 'Image 1 for Actress 8', 'image-8-1.jpg', 'thumb-8-1.jpg', 1080, 1350, 1),
+  (8, 2, 'Image 2 for Actress 8', 'image-8-2.jpg', 'thumb-8-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (9, 1, 'Image 1 for Actress 9', 'image-9-1.jpg', 'thumb-9-1.jpg', 1080, 1350, 1),
+  (9, 2, 'Image 2 for Actress 9', 'image-9-2.jpg', 'thumb-9-2.jpg', 1080, 1350, 1);
+INSERT INTO `actress_images` (`actress_id`, `level_number`, `title`, `image_url`, `thumbnail_url`, `width`, `height`, `is_active`) VALUES
+  (10, 1, 'Image 1 for Actress 10', 'image-10-1.jpg', 'thumb-10-1.jpg', 1080, 1350, 1),
+  (10, 2, 'Image 2 for Actress 10', 'image-10-2.jpg', 'thumb-10-2.jpg', 1080, 1350, 1);
 
 -- --------------------------------------------------------
 -- Table structure for table `user_actress_selections`

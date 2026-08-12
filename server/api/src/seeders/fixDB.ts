@@ -1,11 +1,11 @@
 import { sequelize } from '../config/database';
-import { ActressImage } from '../models';
+import { runDatabaseMigrations } from '../config/databaseMigrations';
 
 const fix = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.query('UPDATE actress_images SET level_number = id');
-    console.log('Fixed existing actress images.');
+    await runDatabaseMigrations();
+    console.log('Database migrations are up to date.');
     process.exit(0);
   } catch (error) {
     console.error(error);
