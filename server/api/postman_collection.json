@@ -10,9 +10,9 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "http://54.167.49.121:5000/api/v1/mobile/auth/guest",
+          "raw": "http://34.201.82.188:5000/api/v1/mobile/auth/guest",
           "protocol": "http",
-          "host": ["54", "167", "49", "121"],
+          "host": ["34", "201", "82", "188"],
           "port": "5000",
           "path": ["api", "v1", "mobile", "auth", "guest"]
         }
@@ -29,9 +29,9 @@
           }
         ],
         "url": {
-          "raw": "http://54.167.49.121:5000/api/v1/mobile/game/levels",
+          "raw": "http://34.201.82.188:5000/api/v1/mobile/game/levels",
           "protocol": "http",
-          "host": ["54", "167", "49", "121"],
+          "host": ["34", "201", "82", "188"],
           "port": "5000",
           "path": ["api", "v1", "mobile", "game", "levels"]
         }

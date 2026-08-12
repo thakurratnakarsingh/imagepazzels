@@ -43,4 +43,14 @@ export const runDatabaseMigrations = async () => {
       unique: true,
     });
   }
+
+  const apiBaseUrl = (process.env.API_BASE_URL || 'http://34.201.82.188:5000').replace(/\/$/, '');
+  await sequelize.query(`
+    UPDATE app_configurations
+    SET config_value = :imageBaseUrl
+    WHERE config_key = 'image_base_url'
+  `, {
+    replacements: { imageBaseUrl: `${apiBaseUrl}/uploads` },
+    type: QueryTypes.UPDATE,
+  });
 };

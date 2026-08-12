@@ -15,7 +15,7 @@ android {
         versionName = "1.0"
 
         val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
-            .orElse("http://54.167.49.121:5000/")
+            .orElse("http://34.201.82.188:5000/")
             .get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 

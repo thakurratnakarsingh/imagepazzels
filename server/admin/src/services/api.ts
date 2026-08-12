@@ -2,7 +2,7 @@ import axios from 'axios';
 import { store } from '../store';
 import { logout } from '../store/authSlice';
 
-const productionBaseURL = 'http://54.167.49.121:5000/api/v1';
+const productionBaseURL = 'http://34.201.82.188:5000/api/v1';
 const baseURL = import.meta.env.DEV ? '/api/v1' : productionBaseURL;
 
 const api = axios.create({

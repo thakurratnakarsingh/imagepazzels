@@ -31,7 +31,7 @@ Requirements: Node.js 18+, MySQL 8+, JDK 17, and Android SDK 34.
 ### Android app
 
 1. Ensure the API is running and the selected actresses have images uploaded for the levels you want to play.
-2. The configured API URL is `http://54.167.49.121:5000/`.
+2. The configured API URL is `http://34.201.82.188:5000/`.
 3. If the machine IP changes, update `API_BASE_URL` in `mobile/gradle.properties` and both server `.env` files.
 4. Build with `cd mobile && ./gradlew assembleDebug` or open the `mobile` directory in Android Studio.
 

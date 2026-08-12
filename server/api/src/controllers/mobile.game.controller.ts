@@ -7,7 +7,7 @@ import { sequelize } from '../config/database';
 import { gridSizeForLevel } from '../utilities/levelGrid';
 
 const assetUrl = (relativePath: string) => {
-  const base = (process.env.API_BASE_URL || 'http://54.167.49.121:5000').replace(/\/$/, '');
+  const base = (process.env.API_BASE_URL || 'http://34.201.82.188:5000').replace(/\/$/, '');
   return `${base}/uploads/${relativePath.replace(/^\//, '')}`;
 };
 

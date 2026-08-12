@@ -15,7 +15,7 @@ async function testUpload() {
     form.append('image', fileBlob, 'dummy.jpg');
 
     console.log('Sending request...');
-    const res = await fetch('http://54.167.49.121:5000/api/v1/admin/splashes', {
+    const res = await fetch('http://34.201.82.188:5000/api/v1/admin/splashes', {
       method: 'POST',
       body: form
     });
