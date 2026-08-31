@@ -44,7 +44,7 @@ export const runDatabaseMigrations = async () => {
     });
   }
 
-  const apiBaseUrl = (process.env.API_BASE_URL || 'http://34.201.82.188:5000').replace(/\/$/, '');
+  const apiBaseUrl = (process.env.API_BASE_URL || 'http://192.168.31.220:5000').replace(/\/$/, '');
   await sequelize.query(`
     UPDATE app_configurations
     SET config_value = :imageBaseUrl
