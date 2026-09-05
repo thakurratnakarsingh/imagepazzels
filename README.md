@@ -31,8 +31,8 @@ Requirements: Node.js 18+, MySQL 8+, JDK 17, and Android SDK 34.
 ### Android app
 
 1. Ensure the API is running and the selected actresses have images uploaded for the levels you want to play.
-2. The configured API URL is `http://192.168.31.220:5000/`.
-3. If the machine IP changes, update `API_BASE_URL` in `mobile/gradle.properties`, `mobile-slide/gradle.properties`, and both server `.env` files. Local `.env` files are ignored by git; commit the matching `.env.example` changes for pull-based server setup.
+2. The configured API URL is `https://vids-libraries-appointment-success.trycloudflare.com/`.
+3. If the API tunnel changes, update `API_BASE_URL` in `mobile/gradle.properties`, `mobile-slide/gradle.properties`, and both server `.env` files. Local `.env` files are ignored by git; commit the matching `.env.example` changes for pull-based server setup.
 4. Build with `cd mobile && ./gradlew assembleDebug` or open the `mobile` directory in Android Studio.
 
 The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracking, local preferences, sound and vibration controls, server-backed save/restore, server-scored completion, rewards, and level advancement.

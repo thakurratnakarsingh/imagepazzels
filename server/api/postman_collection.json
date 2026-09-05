@@ -10,10 +10,9 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "http://192.168.31.220:5000/api/v1/mobile/auth/guest",
-          "protocol": "http",
-          "host": ["34", "201", "82", "188"],
-          "port": "5000",
+          "raw": "https://vids-libraries-appointment-success.trycloudflare.com/api/v1/mobile/auth/guest",
+          "protocol": "https",
+          "host": ["vids-libraries-appointment-success", "trycloudflare", "com"],
           "path": ["api", "v1", "mobile", "auth", "guest"]
         }
       }
@@ -29,10 +28,9 @@
           }
         ],
         "url": {
-          "raw": "http://192.168.31.220:5000/api/v1/mobile/game/levels",
-          "protocol": "http",
-          "host": ["34", "201", "82", "188"],
-          "port": "5000",
+          "raw": "https://vids-libraries-appointment-success.trycloudflare.com/api/v1/mobile/game/levels",
+          "protocol": "https",
+          "host": ["vids-libraries-appointment-success", "trycloudflare", "com"],
           "path": ["api", "v1", "mobile", "game", "levels"]
         }
       }

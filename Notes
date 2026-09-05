@@ -1,0 +1,30 @@
+To test the API 
+
+https://vids-libraries-appointment-success.trycloudflare.com
+https://vids-libraries-appointment-success.trycloudflare.com/api/v1/mobile/config
+
+Admin Panel
+cd C:\imagespazzels\actress-puzzle-game\server\admin
+npm run dev
+https://biotechnology-vincent-henderson-additionally.trycloudflare.com
+
+
+Base urls changes
+build.gradle.kt
+gradle.properties
+app/build.gradle.kts
+.env
+src/services/api.ts
+admin/vite.config.ts
+api/.env
+in the sql file also
+
+imge pizels
+
+Email: thakursingh294t@gmail.com
+Password: Newy@rk2963
+
+
+cd C:\imagespazzels\actress-puzzle-game\server\api
+
+npx ts-node -e "const bcrypt = require('bcryptjs'); const { Admin } = require('./src/models'); const { sequelize } = require('./src/config/database'); (async () => { await sequelize.authenticate(); const admin = await Admin.findOne({ order: [['id', 'ASC']] }); if (!admin) { console.log('No admins found in database!'); process.exit(1); } const hash = await bcrypt.hash('Newy@rk2963', 10); await admin.update({ email: 'thakursingh294t@gmail.com', password: hash, is_active: true }); console.log('Reset successful!'); await sequelize.close(); process.exit(0); })().catch((e) => { console.error(e); process.exit(1); });"

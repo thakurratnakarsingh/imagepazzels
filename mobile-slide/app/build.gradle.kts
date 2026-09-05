@@ -16,7 +16,7 @@ android {
         versionName = "1.0"
 
         val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
-            .orElse("http://192.168.31.220:5000/")
+            .orElse("https://vids-libraries-appointment-success.trycloudflare.com/")
             .get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 

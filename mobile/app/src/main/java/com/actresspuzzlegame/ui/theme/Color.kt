@@ -2,27 +2,35 @@ package com.actresspuzzlegame.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// Premium casual puzzle palette.
+val PremiumBackgroundDark = Color(0xFF12182A)
+val PremiumBackgroundLight = Color(0xFF244A52)
+val PremiumBackgroundMid = Color(0xFF263657)
+val PremiumSurface = Color(0xFF24304B)
+val PremiumSurfaceHighlight = Color(0xFF344563)
+val PremiumSurfaceSoft = Color(0xFFFFF7ED)
+val PremiumSurfaceMuted = Color(0xFFEAF2F3)
+val PremiumStroke = Color(0x66FFFFFF)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val PremiumPrimary = Color(0xFFFF7664)
+val PremiumPrimaryDark = Color(0xFFE45649)
+val PremiumPrimaryLight = Color(0xFFFFA28F)
 
-val BrandPurpleDark = Color(0xFF3F1D91)
-val BrandPurple = Color(0xFF7047B8)
-val BrandPurpleLight = Color(0xFF9C6FE4)
-val BrandPink = Color(0xFFFF5D8F)
-val BrandOrange = Color(0xFFFF9A5A)
-val BrandGold = Color(0xFFFFD95C)
-val BrandCream = Color(0xFFFFFBF5)
-val BrandInk = Color(0xFF29364D)
-val BrandMuted = Color(0xFF6B7587)
+val PremiumAccent = Color(0xFF59D7C7)
+val PremiumAccentDark = Color(0xFF24AFA4)
+val PremiumSuccess = Color(0xFF55D88B)
+val PremiumSuccessDark = Color(0xFF2AAE63)
+val PremiumWarning = Color(0xFFFF5D7D)
+val PremiumWarningDark = Color(0xFFD63E60)
 
-val BrandGradientColors = listOf(
-    BrandPurpleDark,
-    Color(0xFF7B2CBF),
-    BrandPink,
-    BrandOrange
-)
+val PremiumGold = Color(0xFFFFC857)
+val PremiumGoldLight = Color(0xFFFFE08A)
+
+val PremiumTextWhite = Color(0xFFFFFFFF)
+val PremiumTextGray = Color(0xFFC5D2DF)
+val PremiumTextDark = Color(0xFF172033)
+
+val PremiumGradientBg = listOf(PremiumBackgroundDark, PremiumBackgroundMid, PremiumBackgroundLight)
+val PremiumGradientPrimary = listOf(PremiumPrimaryLight, PremiumPrimary)
+val PremiumGradientAccent = listOf(PremiumAccent, PremiumAccentDark)
+val PremiumGradientGold = listOf(PremiumGoldLight, PremiumGold)

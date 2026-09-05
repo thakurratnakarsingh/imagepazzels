@@ -10,21 +10,21 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val BrandColorScheme = lightColorScheme(
-    primary = BrandPurple,
-    onPrimary = BrandCream,
-    primaryContainer = Color(0xFFE8DAFF),
-    onPrimaryContainer = BrandPurpleDark,
-    secondary = BrandPink,
-    onSecondary = BrandCream,
-    tertiary = BrandGold,
-    background = BrandPurpleDark,
-    onBackground = BrandCream,
-    surface = BrandCream,
-    onSurface = BrandInk,
-    surfaceVariant = Color(0xFFF3EAFB),
-    onSurfaceVariant = BrandMuted,
-    error = Color(0xFFD73D58)
+private val PremiumColorScheme = lightColorScheme(
+    primary = PremiumPrimary,
+    onPrimary = PremiumTextWhite,
+    primaryContainer = PremiumPrimaryLight,
+    onPrimaryContainer = PremiumTextWhite,
+    secondary = PremiumAccent,
+    onSecondary = PremiumTextDark,
+    tertiary = PremiumGold,
+    background = PremiumBackgroundDark,
+    onBackground = PremiumTextWhite,
+    surface = PremiumSurface,
+    onSurface = PremiumTextWhite,
+    surfaceVariant = PremiumSurfaceHighlight,
+    onSurfaceVariant = PremiumTextGray,
+    error = PremiumWarning
 )
 
 @Composable
@@ -35,15 +35,15 @@ fun ActressPuzzleGameTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = BrandPurpleDark.toArgb()
-            window.navigationBarColor = BrandPurpleDark.toArgb()
+            window.statusBarColor = PremiumBackgroundDark.toArgb()
+            window.navigationBarColor = PremiumBackgroundDark.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
         }
     }
 
     MaterialTheme(
-        colorScheme = BrandColorScheme,
+        colorScheme = PremiumColorScheme,
         content = content
     )
 }

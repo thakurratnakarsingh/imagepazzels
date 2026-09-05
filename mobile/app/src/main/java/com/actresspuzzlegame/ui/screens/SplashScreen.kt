@@ -35,9 +35,11 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.actresspuzzlegame.network.ApiClient
 import com.actresspuzzlegame.network.SplashData
-import com.actresspuzzlegame.ui.theme.BrandGold
-import com.actresspuzzlegame.ui.theme.BrandGradientColors
-import com.actresspuzzlegame.ui.theme.BrandPurpleDark
+import com.actresspuzzlegame.ui.theme.PremiumBackgroundDark
+import com.actresspuzzlegame.ui.theme.PremiumGradientPrimary
+import com.actresspuzzlegame.ui.theme.PremiumPrimaryLight
+import com.actresspuzzlegame.ui.theme.PremiumTextGray
+import com.actresspuzzlegame.ui.theme.PremiumTextWhite
 import kotlinx.coroutines.delay
 
 @Composable
@@ -46,9 +48,9 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
     val isLoading = remember { mutableStateOf(true) }
     val transition = rememberInfiniteTransition(label = "splash_pulse")
     val pulse by transition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(tween(1_200), repeatMode = RepeatMode.Reverse),
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(tween(1_250), repeatMode = RepeatMode.Reverse),
         label = "splash_logo_pulse"
     )
 
@@ -57,7 +59,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
             val response = ApiClient.service.getActiveSplash()
             if (response.isSuccessful) splashData.value = response.body()
         } catch (_: Exception) {
-            // The branded fallback remains visible when the device is offline.
+            // Keep the branded fallback visible when the device is offline.
         } finally {
             isLoading.value = false
         }
@@ -65,10 +67,9 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
         onSplashComplete()
     }
 
-    Box(
+    PremiumGameBackground(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(BrandGradientColors))
             .statusBarsPadding()
     ) {
         splashData.value?.let { data ->
@@ -79,16 +80,24 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
                 contentScale = ContentScale.Crop
             )
             Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, Color.Transparent, BrandPurpleDark.copy(alpha = 0.92f))
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                                PremiumBackgroundDark.copy(alpha = 0.94f)
+                            )
+                        )
                     )
-                )
             )
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 42.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 28.dp, vertical = 42.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(Modifier.weight(1f))
@@ -97,30 +106,32 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
                     .size(82.dp)
                     .graphicsLayer { scaleX = pulse; scaleY = pulse }
                     .clip(CircleShape)
-                    .background(BrandGold),
+                    .background(Brush.verticalGradient(PremiumGradientPrimary)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("✦", color = BrandPurpleDark, fontSize = 42.sp, fontWeight = FontWeight.Black)
+                GameIconCanvas(GameIcon.Puzzle, PremiumTextWhite, Modifier.size(44.dp))
             }
             Text(
-                "IMAGE PUZZLE",
-                color = Color.White,
+                text = "IMAGE PUZZLE",
+                color = PremiumTextWhite,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 14.dp)
             )
             Text(
-                "Slide • Solve • Celebrate",
-                color = Color.White.copy(alpha = 0.76f),
+                text = "Slide | Solve | Celebrate",
+                color = PremiumTextGray,
                 fontSize = 14.sp,
                 letterSpacing = 1.sp
             )
             if (isLoading.value) {
                 CircularProgressIndicator(
-                    color = BrandGold,
+                    color = PremiumPrimaryLight,
                     strokeWidth = 3.dp,
-                    modifier = Modifier.padding(top = 24.dp).size(28.dp)
+                    modifier = Modifier
+                        .padding(top = 24.dp)
+                        .size(28.dp)
                 )
             } else {
                 Spacer(Modifier.size(52.dp))

@@ -39,7 +39,7 @@ INSERT INTO `app_configurations` (`config_key`, `config_value`) VALUES
 ('vibration_default', 'true'),
 ('default_splash_duration', '3000'),
 ('api_pagination_limit', '20'),
-('image_base_url', 'http://192.168.31.220:5000/uploads');
+('image_base_url', 'https://vids-libraries-appointment-success.trycloudflare.com/uploads');
 
 -- --------------------------------------------------------
 -- Table structure for table `admins`

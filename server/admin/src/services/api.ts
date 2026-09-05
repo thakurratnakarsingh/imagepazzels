@@ -2,7 +2,7 @@ import axios from 'axios';
 import { store } from '../store';
 import { logout } from '../store/authSlice';
 
-const productionBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://192.168.31.220:5000/api/v1';
+const productionBaseURL = import.meta.env.VITE_API_BASE_URL || 'https://vids-libraries-appointment-success.trycloudflare.com/api/v1';
 const baseURL = import.meta.env.DEV ? '/api/v1' : productionBaseURL;
 
 const api = axios.create({
