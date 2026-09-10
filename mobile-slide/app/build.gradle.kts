@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+}
+
+val sharedBaseUrls = Properties().apply {
+    val sharedFile = rootProject.projectDir.resolve("base-url.properties")
+    if (sharedFile.isFile) {
+        sharedFile.inputStream().use(::load)
+    }
 }
 
 android {
@@ -16,7 +25,7 @@ android {
         versionName = "1.0"
 
         val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
-            .orElse("https://vids-libraries-appointment-success.trycloudflare.com/")
+            .orElse(sharedBaseUrls.getProperty("API_BASE_URL") ?: "https://vids-libraries-appointment-success.trycloudflare.com")
             .get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 

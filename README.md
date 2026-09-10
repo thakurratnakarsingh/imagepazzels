@@ -13,11 +13,18 @@ This repository contains the Actress Puzzle Game project with a backend API, adm
 
 Requirements: Node.js 18+, MySQL 8+, JDK 17, and Android SDK 34.
 
+Each application has its own base URL file. Update the matching file when a Cloudflare tunnel or server host changes:
+
+- `server/api/base-url.properties`
+- `server/admin/base-url.properties`
+- `mobile/base-url.properties`
+- `mobile-slide/base-url.properties`
+
 ### API
 
 1. Navigate to `server/api`
 2. Import `server/database/actress_puzzle_game.sql` into MySQL.
-3. Copy `.env.example` to `.env` and set the database, JWT secrets, and `API_BASE_URL`.
+3. Copy `.env.example` to `.env` and set the database and JWT secrets. Public base URLs come from `server/api/base-url.properties`.
 4. Install locked dependencies: `npm ci`
 5. Run in development: `npm run dev`
 
@@ -31,8 +38,8 @@ Requirements: Node.js 18+, MySQL 8+, JDK 17, and Android SDK 34.
 ### Android app
 
 1. Ensure the API is running and the selected actresses have images uploaded for the levels you want to play.
-2. The configured API URL is `https://vids-libraries-appointment-success.trycloudflare.com/`.
-3. If the API tunnel changes, update `API_BASE_URL` in `mobile/gradle.properties`, `mobile-slide/gradle.properties`, and both server `.env` files. Local `.env` files are ignored by git; commit the matching `.env.example` changes for pull-based server setup.
+2. The configured API URL comes from `API_BASE_URL` in `mobile/base-url.properties`.
+3. If the API tunnel changes, update `mobile/base-url.properties`, restart the API if needed, and rebuild the Android app.
 4. Build with `cd mobile && ./gradlew assembleDebug` or open the `mobile` directory in Android Studio.
 
 The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracking, local preferences, sound and vibration controls, server-backed save/restore, server-scored completion, rewards, and level advancement.
@@ -40,7 +47,7 @@ The game supports solvable sliding puzzles, dynamic grid sizes, move/time tracki
 ### Drag-and-swap Android clone
 
 1. Open `mobile-slide` as a separate project in Android Studio, or run `cd mobile-slide && ./gradlew assembleDebug`.
-2. It uses the same `API_BASE_URL` Gradle property and the same mobile API, database, uploaded images, admin configuration, authentication, progress, and completion endpoints as the original client.
+2. The configured API URL comes from `API_BASE_URL` in `mobile-slide/base-url.properties`.
 3. Its application ID is `com.actresspuzzlegame.slide`, so it can be installed beside the original app.
 4. Every image tile remains visible. Drag any tile onto any other tile and release; the two tiles exchange positions, with the displaced tile moving directly back to the dragged tile's original position.
 5. Users can select up to 10 models. The selection screen enforces the limit, and the game home screen displays every selected model in a two-row collection.

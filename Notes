@@ -28,3 +28,13 @@ Password: Newy@rk2963
 cd C:\imagespazzels\actress-puzzle-game\server\api
 
 npx ts-node -e "const bcrypt = require('bcryptjs'); const { Admin } = require('./src/models'); const { sequelize } = require('./src/config/database'); (async () => { await sequelize.authenticate(); const admin = await Admin.findOne({ order: [['id', 'ASC']] }); if (!admin) { console.log('No admins found in database!'); process.exit(1); } const hash = await bcrypt.hash('Newy@rk2963', 10); await admin.update({ email: 'thakursingh294t@gmail.com', password: hash, is_active: true }); console.log('Reset successful!'); await sequelize.close(); process.exit(0); })().catch((e) => { console.error(e); process.exit(1); });"
+
+
+[base-url.properties](C:/imagespazzels/actress-puzzle-game/base-url.properties)
+[server/api/src/app.ts](C:/imagespazzels/actress-puzzle-game/server/api/src/app.ts)
+[server/admin/vite.config.ts](C:/imagespazzels/actress-puzzle-game/server/admin/vite.config.ts)
+[server/admin/src/services/api.ts](C:/imagespazzels/actress-puzzle-game/server/admin/src/services/api.ts)
+[server/admin/src/vite-env.d.ts](C:/imagespazzels/actress-puzzle-game/server/admin/src/vite-env.d.ts)
+[mobile/app/build.gradle.kts](C:/imagespazzels/actress-puzzle-game/mobile/app/build.gradle.kts)
+[mobile-slide/app/build.gradle.kts](C:/imagespazzels/actress-puzzle-game/mobile-slide/app/build.gradle.kts)
+

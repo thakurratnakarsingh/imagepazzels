@@ -4,18 +4,26 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
+const sharedBaseUrlPath = path.resolve(__dirname, '..', 'base-url.properties');
+if (fs.existsSync(sharedBaseUrlPath)) {
+  dotenv.config({ path: sharedBaseUrlPath, override: true });
+}
+
 const app = express();
+const corsOrigins = process.env.CORS_ORIGINS
+  || ['http://localhost:5173', process.env.ADMIN_BASE_URL].filter(Boolean).join(',');
 
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: false, // allow images to be loaded cross-origin
 }));
 app.use(cors({
-  origin: process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+  origin: corsOrigins
+    ? corsOrigins.split(',').map((origin) => origin.trim())
     : '*',
 }));
 app.use(morgan('dev'));
