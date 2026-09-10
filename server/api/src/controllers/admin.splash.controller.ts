@@ -1,18 +1,32 @@
 import { Request, Response, NextFunction } from 'express';
 import { SplashScreen } from '../models';
 import { sequelize } from '../config/database';
-import fs from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
+import { randomUUID } from 'crypto';
+import {
+  cleanRelativeUploadPath,
+  cleanupUploadedTempFiles,
+  deleteFileIfExists,
+  deleteUploadFileIfExists,
+  ensureUploadDir,
+  finalizeHashedUpload,
+  toUploadRelativePath,
+} from '../utilities/uploadStorage';
 
-// Helper to generate readable timestamps like 20260802-143045
-const getReadableTimestamp = () => {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+const splashFilename = (value: string) => (
+  cleanRelativeUploadPath(value).split('/').filter(Boolean).pop() || value
+);
+
+const deleteSplashFileIfUnused = async (filename: string | null | undefined) => {
+  if (!filename) return;
+
+  const cleanFilename = splashFilename(filename);
+  const references = await SplashScreen.count({ where: { image_url: cleanFilename } });
+  if (references === 0) {
+    await deleteUploadFileIfExists(toUploadRelativePath('splash', cleanFilename));
+  }
 };
-
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'splash');
 
 export const getAllSplashes = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -26,6 +40,8 @@ export const getAllSplashes = async (req: Request, res: Response, next: NextFunc
 };
 
 export const createSplash = async (req: Request, res: Response, next: NextFunction) => {
+  let tempSplashPath: string | null = null;
+
   try {
     const { name, subtitle, time } = req.body;
     
@@ -41,32 +57,41 @@ export const createSplash = async (req: Request, res: Response, next: NextFuncti
       return res.status(400).json({ success: false, message: 'Display time must be between 1 and 30 seconds' });
     }
 
-    // Ensure directory exists
-    await fs.mkdir(UPLOAD_DIR, { recursive: true });
-
     // Process image with Sharp
-    const filename = `splash-${getReadableTimestamp()}-${Math.round(Math.random() * 1E4)}.webp`;
-    const filepath = path.join(UPLOAD_DIR, filename);
+    const uploadDir = await ensureUploadDir('splash');
+    tempSplashPath = path.join(uploadDir, `.tmp-${randomUUID()}.webp`);
 
-    await sharp(req.file.buffer)
+    await sharp(req.file.path, { sequentialRead: true })
       .webp({ quality: 80 })
-      .toFile(filepath);
+      .toFile(tempSplashPath);
+
+    const splashFile = await finalizeHashedUpload({
+      tempFilePath: tempSplashPath,
+      targetDir: uploadDir,
+      filenamePrefix: 'splash',
+    });
+    tempSplashPath = null;
 
     const splash = await SplashScreen.create({
       name: name,
       subtitle: subtitle || '',
-      image_url: filename,
+      image_url: splashFile.filename,
       time: displayTime,
       is_active: false // Defaults to false as per requirements
     });
 
     res.status(201).json({ success: true, message: 'Splash created', data: splash });
   } catch (error) {
+    await deleteFileIfExists(tempSplashPath);
     next(error);
+  } finally {
+    await cleanupUploadedTempFiles(req);
   }
 };
 
 export const updateSplash = async (req: Request, res: Response, next: NextFunction) => {
+  let tempSplashPath: string | null = null;
+
   try {
     const { id } = req.params;
     const { name, subtitle, time } = req.body;
@@ -86,38 +111,40 @@ export const updateSplash = async (req: Request, res: Response, next: NextFuncti
       splash.time = displayTime;
     }
 
-    let oldFilepath = null;
+    let oldFilename: string | null = null;
     if (req.file) {
-      oldFilepath = path.join(UPLOAD_DIR, splash.image_url);
-
-      // Ensure directory exists
-      await fs.mkdir(UPLOAD_DIR, { recursive: true });
+      oldFilename = splash.image_url;
 
       // Process new image with Sharp
-      const filename = `splash-${getReadableTimestamp()}-${Math.round(Math.random() * 1E4)}.webp`;
-      const filepath = path.join(UPLOAD_DIR, filename);
+      const uploadDir = await ensureUploadDir('splash');
+      tempSplashPath = path.join(uploadDir, `.tmp-${randomUUID()}.webp`);
 
-      await sharp(req.file.buffer)
+      await sharp(req.file.path, { sequentialRead: true })
         .webp({ quality: 80 })
-        .toFile(filepath);
+        .toFile(tempSplashPath);
 
-      splash.image_url = filename;
+      const splashFile = await finalizeHashedUpload({
+        tempFilePath: tempSplashPath,
+        targetDir: uploadDir,
+        filenamePrefix: 'splash',
+      });
+      tempSplashPath = null;
+
+      splash.image_url = splashFile.filename;
     }
 
     await splash.save();
 
-    // Now that the record is successfully saved, we can delete the old image safely
-    if (oldFilepath) {
-      try {
-        await fs.unlink(oldFilepath);
-      } catch (e) {
-        console.log('Old file could not be deleted', e);
-      }
+    if (oldFilename && oldFilename !== splash.image_url) {
+      await deleteSplashFileIfUnused(oldFilename);
     }
 
     res.json({ success: true, message: 'Splash updated', data: splash });
   } catch (error) {
+    await deleteFileIfExists(tempSplashPath);
     next(error);
+  } finally {
+    await cleanupUploadedTempFiles(req);
   }
 };
 
@@ -129,15 +156,10 @@ export const deleteSplash = async (req: Request, res: Response, next: NextFuncti
       return res.status(404).json({ success: false, message: 'Splash not found' });
     }
 
-    // Attempt to delete file
-    try {
-      const filepath = path.join(UPLOAD_DIR, splash.image_url);
-      await fs.unlink(filepath);
-    } catch (e) {
-      console.log('File already deleted or not found');
-    }
+    const oldFilename = splash.image_url;
 
     await splash.destroy();
+    await deleteSplashFileIfUnused(oldFilename);
 
     res.json({ success: true, message: 'Splash deleted' });
   } catch (error) {

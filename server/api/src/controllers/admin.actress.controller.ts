@@ -1,17 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
 import { Actress, ActressImage } from '../models';
 import path from 'path';
-import fs from 'fs/promises';
 import sharp from 'sharp';
+import { Op } from 'sequelize';
+import { randomUUID } from 'crypto';
+import {
+  cleanupUploadedTempFiles,
+  deleteFileIfExists,
+  deleteUploadFileIfExists,
+  ensureUploadDir,
+  finalizeHashedUpload,
+  toUploadRelativePath,
+} from '../utilities/uploadStorage';
 
-// Helper to generate readable timestamps like 20260802-143045
-const getReadableTimestamp = () => {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+const thumbnailRelativePath = (filename: string) => (
+  toUploadRelativePath('actresses', 'thumbnails', path.basename(filename))
+);
+
+const deleteThumbnailIfUnused = async (filename: string | null | undefined) => {
+  if (!filename) return;
+
+  const cleanFilename = path.basename(filename);
+  const levelThumbnailPath = thumbnailRelativePath(cleanFilename);
+  const actressReferences = await Actress.count({ where: { thumbnail_image: cleanFilename } });
+  const levelReferences = await ActressImage.count({
+    where: {
+      [Op.or]: [
+        { image_url: levelThumbnailPath },
+        { thumbnail_url: levelThumbnailPath },
+      ],
+    },
+  });
+
+  if (actressReferences + levelReferences === 0) {
+    await deleteUploadFileIfExists(levelThumbnailPath);
+  }
 };
-
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'actresses', 'thumbnails');
 
 export const getAllActresses = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -25,6 +49,8 @@ export const getAllActresses = async (req: Request, res: Response, next: NextFun
 };
 
 export const createActress = async (req: Request, res: Response, next: NextFunction) => {
+  let tempThumbnailPath: string | null = null;
+
   try {
     const { name, biography, country, date_of_birth, is_active, is_featured } = req.body;
     
@@ -37,14 +63,21 @@ export const createActress = async (req: Request, res: Response, next: NextFunct
     let thumbnailFilename = null;
 
     if (req.file) {
-      await fs.mkdir(UPLOAD_DIR, { recursive: true });
-      thumbnailFilename = `actress-${slug}-${getReadableTimestamp()}.webp`;
-      const filepath = path.join(UPLOAD_DIR, thumbnailFilename);
+      const uploadDir = await ensureUploadDir('actresses', 'thumbnails');
+      tempThumbnailPath = path.join(uploadDir, `.tmp-${randomUUID()}.webp`);
 
-      await sharp(req.file.buffer)
+      await sharp(req.file.path, { sequentialRead: true })
         .resize(300, 300, { fit: 'cover' })
         .webp({ quality: 80 })
-        .toFile(filepath);
+        .toFile(tempThumbnailPath);
+
+      const thumbnailFile = await finalizeHashedUpload({
+        tempFilePath: tempThumbnailPath,
+        targetDir: uploadDir,
+        filenamePrefix: 'actress-thumbnail',
+      });
+      tempThumbnailPath = null;
+      thumbnailFilename = thumbnailFile.filename;
     }
 
     const actress = await Actress.create({
@@ -60,11 +93,16 @@ export const createActress = async (req: Request, res: Response, next: NextFunct
 
     res.status(201).json({ success: true, message: 'Actress created', data: actress });
   } catch (error) {
+    await deleteFileIfExists(tempThumbnailPath);
     next(error);
+  } finally {
+    await cleanupUploadedTempFiles(req);
   }
 };
 
 export const updateActress = async (req: Request, res: Response, next: NextFunction) => {
+  let tempThumbnailPath: string | null = null;
+
   try {
     const { id } = req.params;
     const { name, biography, country, date_of_birth, is_active, is_featured } = req.body;
@@ -85,28 +123,35 @@ export const updateActress = async (req: Request, res: Response, next: NextFunct
     if (is_featured !== undefined) actress.is_featured = (is_featured === 'true' || is_featured === true);
 
     if (req.file) {
-      // Delete old thumbnail
-      if (actress.thumbnail_image) {
-        try {
-          await fs.unlink(path.join(UPLOAD_DIR, actress.thumbnail_image));
-        } catch(e) {}
-      }
+      const oldThumbnail = actress.thumbnail_image;
 
-      await fs.mkdir(UPLOAD_DIR, { recursive: true });
-      const thumbnailFilename = `actress-${actress.slug}-${getReadableTimestamp()}.webp`;
-      await sharp(req.file.buffer)
+      const uploadDir = await ensureUploadDir('actresses', 'thumbnails');
+      tempThumbnailPath = path.join(uploadDir, `.tmp-${randomUUID()}.webp`);
+      await sharp(req.file.path, { sequentialRead: true })
         .resize(300, 300, { fit: 'cover' })
         .webp({ quality: 80 })
-        .toFile(path.join(UPLOAD_DIR, thumbnailFilename));
-      
-      actress.thumbnail_image = thumbnailFilename;
-    }
+        .toFile(tempThumbnailPath);
 
-    await actress.save();
+      const thumbnailFile = await finalizeHashedUpload({
+        tempFilePath: tempThumbnailPath,
+        targetDir: uploadDir,
+        filenamePrefix: 'actress-thumbnail',
+      });
+      tempThumbnailPath = null;
+      
+      actress.thumbnail_image = thumbnailFile.filename;
+      await actress.save();
+      await deleteThumbnailIfUnused(oldThumbnail);
+    } else {
+      await actress.save();
+    }
 
     res.json({ success: true, message: 'Actress updated', data: actress });
   } catch (error) {
+    await deleteFileIfExists(tempThumbnailPath);
     next(error);
+  } finally {
+    await cleanupUploadedTempFiles(req);
   }
 };
 
@@ -118,16 +163,13 @@ export const deleteActress = async (req: Request, res: Response, next: NextFunct
       return res.status(404).json({ success: false, message: 'Actress not found' });
     }
 
-    if (actress.thumbnail_image) {
-      try {
-        await fs.unlink(path.join(UPLOAD_DIR, actress.thumbnail_image));
-      } catch (e) {}
-    }
+    const oldThumbnail = actress.thumbnail_image;
 
     // Since we're keeping actress_images tied to this actress, we probably want to destroy them too
     // In Sequelize, paranoid mode just sets deletedAt, but for files we might need to delete files manually
     // if we wanted to free up space. For now, just destroy the record.
     await actress.destroy();
+    await deleteThumbnailIfUnused(oldThumbnail);
 
     res.json({ success: true, message: 'Actress deleted' });
   } catch (error) {

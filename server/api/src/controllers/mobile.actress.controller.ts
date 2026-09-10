@@ -1,16 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { Actress, ActressImage } from '../models';
+import { Actress } from '../models';
 
 export const getActresses = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const actresses = await Actress.findAll({
+      attributes: ['id', 'name', 'thumbnail_image', 'is_active'],
       where: { is_active: true },
-      include: [{
-        model: ActressImage,
-        as: 'images',
-        where: { is_active: true },
-        required: false
-      }]
+      order: [['name', 'ASC']],
+      raw: true,
     });
 
     res.json({

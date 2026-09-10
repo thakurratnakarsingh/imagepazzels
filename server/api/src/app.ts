@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { configureImageProcessing } from './config/imageProcessing';
+import { getUploadRoot } from './utilities/uploadStorage';
 
 dotenv.config();
 
@@ -12,6 +14,7 @@ const sharedBaseUrlPath = path.resolve(__dirname, '..', 'base-url.properties');
 if (fs.existsSync(sharedBaseUrlPath)) {
   dotenv.config({ path: sharedBaseUrlPath, override: true });
 }
+configureImageProcessing();
 
 const app = express();
 const corsOrigins = process.env.CORS_ORIGINS
@@ -31,7 +34,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
-const uploadDir = path.join(__dirname, '..', process.env.UPLOAD_ROOT || 'uploads');
+const uploadDir = getUploadRoot();
+fs.mkdirSync(uploadDir, { recursive: true });
 app.use('/uploads', express.static(uploadDir));
 
 import apiRoutes from './routes';

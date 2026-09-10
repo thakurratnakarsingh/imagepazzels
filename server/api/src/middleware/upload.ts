@@ -1,8 +1,19 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
+import { randomUUID } from 'crypto';
+import { getUploadTempDir } from '../utilities/uploadStorage';
 
-// Store in memory to process with sharp before saving
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const tempDir = getUploadTempDir();
+    fs.mkdir(tempDir, { recursive: true }, (error) => cb(error, tempDir));
+  },
+  filename: (_req, file, cb) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+    cb(null, `upload-${Date.now()}-${randomUUID()}${extension}`);
+  },
+});
 
 export const upload = multer({
   storage,
