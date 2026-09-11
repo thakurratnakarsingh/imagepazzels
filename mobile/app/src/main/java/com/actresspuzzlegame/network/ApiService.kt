@@ -1,5 +1,6 @@
 package com.actresspuzzlegame.network
 
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -32,8 +33,17 @@ data class ActressData(
     val id: Int,
     val name: String,
     val thumbnail_image: String?,
-    val is_active: Boolean
-)
+    @SerializedName("is_active")
+    private val activeValue: Any?
+) {
+    val isActive: Boolean
+        get() = when (activeValue) {
+            is Boolean -> activeValue
+            is Number -> activeValue.toInt() != 0
+            is String -> activeValue == "1" || activeValue.equals("true", ignoreCase = true)
+            else -> false
+        }
+}
 
 data class ActressesResponse(
     val success: Boolean,

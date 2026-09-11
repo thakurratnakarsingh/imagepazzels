@@ -74,7 +74,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
     ) {
         splashData.value?.let { data ->
             AsyncImage(
-                model = data.image,
+                model = ApiClient.publicAssetUrl(data.image),
                 contentDescription = data.name,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

@@ -76,7 +76,7 @@ fun ActressSelectionScreen(
         try {
             val response = ApiClient.service.getActresses()
             if (response.isSuccessful && response.body()?.success == true) {
-                actresses = response.body()?.data?.filter { it.is_active }.orEmpty()
+                actresses = response.body()?.data?.filter { it.isActive }.orEmpty()
             } else {
                 errorMessage = "Models could not be loaded. Please try again."
             }
@@ -250,7 +250,7 @@ private fun ActressSelectionCard(
             ) {
                 if (actress.thumbnail_image != null) {
                     AsyncImage(
-                        model = "${ApiClient.BASE_SERVER_URL}uploads/actresses/thumbnails/${actress.thumbnail_image}",
+                        model = ApiClient.publicAssetUrl("actresses/thumbnails/${actress.thumbnail_image}"),
                         contentDescription = actress.name,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

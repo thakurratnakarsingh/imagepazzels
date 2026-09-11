@@ -24,7 +24,7 @@ android {
         versionName = "1.0"
 
         val apiBaseUrl = providers.gradleProperty("API_BASE_URL")
-            .orElse(sharedBaseUrls.getProperty("API_BASE_URL") ?: "https://vids-libraries-appointment-success.trycloudflare.com")
+            .orElse(sharedBaseUrls.getProperty("API_BASE_URL") ?: "https://api.actressgamingserver.online")
             .get()
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
 

@@ -102,7 +102,7 @@ fun GameHomeScreen(
         selectedModels = runCatching {
             val modelsById = ApiClient.service.getActresses().body()?.data
                 .orEmpty()
-                .filter { it.is_active }
+                .filter { it.isActive }
                 .associateBy { it.id }
             actressIds.mapNotNull(modelsById::get)
         }.getOrDefault(emptyList())
@@ -271,7 +271,7 @@ private fun HomeHeroShowcase(
             when {
                 loading -> CircularProgressIndicator(color = PremiumAccent)
                 primaryModel?.thumbnail_image != null -> AsyncImage(
-                    model = "${ApiClient.BASE_SERVER_URL}uploads/actresses/thumbnails/${primaryModel.thumbnail_image}",
+                    model = ApiClient.publicAssetUrl("actresses/thumbnails/${primaryModel.thumbnail_image}"),
                     contentDescription = primaryModel.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -417,7 +417,7 @@ private fun SelectedModelAvatar(model: ActressData, modifier: Modifier = Modifie
         ) {
             if (model.thumbnail_image != null) {
                 AsyncImage(
-                    model = "${ApiClient.BASE_SERVER_URL}uploads/actresses/thumbnails/${model.thumbnail_image}",
+                    model = ApiClient.publicAssetUrl("actresses/thumbnails/${model.thumbnail_image}"),
                     contentDescription = model.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()

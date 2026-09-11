@@ -320,7 +320,7 @@ fun GameScreen(
                             val fallbackSize = gridSizeForLevel(currentLevel)
                             PuzzleScreen(
                                 viewModel = puzzleViewModel,
-                                imageUrl = data.image.image_url,
+                                imageUrl = ApiClient.publicAssetUrl(data.image.image_url) ?: data.image.image_url,
                                 rows = (data.rows ?: fallbackSize).coerceIn(2, 8),
                                 columns = (data.columns ?: fallbackSize).coerceIn(2, 8),
                                 shuffleMoves = data.shuffle_moves ?: fallbackSize * fallbackSize * 8,

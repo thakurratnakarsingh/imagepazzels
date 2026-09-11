@@ -323,7 +323,7 @@ fun GameScreen(
                         val gridSize = gridSizeForLevel(currentLevel)
                         PuzzleScreen(
                             viewModel = puzzleViewModel,
-                            imageUrl = data.image.image_url,
+                            imageUrl = ApiClient.publicAssetUrl(data.image.image_url) ?: data.image.image_url,
                             rows = gridSize,
                             columns = gridSize,
                             shuffleMoves = data.shuffle_moves ?: gridSize * gridSize * 8,

@@ -90,7 +90,7 @@ fun GameHomeScreen(
         selectedModels = runCatching {
             val modelsById = ApiClient.service.getActresses().body()?.data
                 .orEmpty()
-                .filter { it.is_active }
+                .filter { it.isActive }
                 .associateBy { it.id }
             actressIds
                 .take(MAX_SELECTED_MODELS)
@@ -307,7 +307,7 @@ private fun SelectedModelAvatar(model: ActressData) {
         ) {
             if (model.thumbnail_image != null) {
                 AsyncImage(
-                    model = "${ApiClient.BASE_SERVER_URL}uploads/actresses/thumbnails/${model.thumbnail_image}",
+                    model = ApiClient.publicAssetUrl("actresses/thumbnails/${model.thumbnail_image}"),
                     contentDescription = model.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
