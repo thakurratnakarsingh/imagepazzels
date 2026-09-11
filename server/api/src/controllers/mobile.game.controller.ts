@@ -7,7 +7,7 @@ import { sequelize } from '../config/database';
 import { gridSizeForLevel } from '../utilities/levelGrid';
 
 const assetUrl = (relativePath: string) => {
-  const base = (process.env.API_BASE_URL || 'https://vids-libraries-appointment-success.trycloudflare.com').replace(/\/$/, '');
+  const base = (process.env.API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
   return `${base}/uploads/${relativePath.replace(/^\//, '')}`;
 };
 

@@ -44,7 +44,7 @@ export const runDatabaseMigrations = async () => {
     });
   }
 
-  const apiBaseUrl = (process.env.API_BASE_URL || 'https://vids-libraries-appointment-success.trycloudflare.com').replace(/\/$/, '');
+  const apiBaseUrl = (process.env.API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
   await sequelize.query(`
     UPDATE app_configurations
     SET config_value = :imageBaseUrl

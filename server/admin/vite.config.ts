@@ -41,14 +41,18 @@ const toHost = (url: string) => {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const baseUrls = readBaseUrls();
-  const configuredApiBaseUrl = baseUrls.API_BASE_URL
+  const configuredApiBaseUrl = !['production'].includes(mode) && baseUrls.API_BASE_URL
     ? toApiV1Url(baseUrls.API_BASE_URL)
     : undefined;
   const apiBaseUrl = configuredApiBaseUrl
     || env.VITE_API_BASE_URL
-    || 'https://vids-libraries-appointment-success.trycloudflare.com/api/v1';
+    || (mode === 'production'
+      ? 'https://api.actressgamingserver.online/api/v1'
+      : 'http://localhost:5000/api/v1');
   const productionApiOrigin = apiBaseUrl.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
   const allowedHost = toHost(baseUrls.ADMIN_BASE_URL || env.ADMIN_BASE_URL || '');
+  const allowedHosts = [allowedHost, 'admin.actressgamingserver.online']
+    .filter(Boolean);
 
   return {
     plugins: [react()],
@@ -58,7 +62,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: true,
-      allowedHosts: allowedHost ? [allowedHost] : [],
+      allowedHosts,
       proxy: {
         '/api': {
           target: productionApiOrigin,
@@ -69,6 +73,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
       },
+    },
+    preview: {
+      host: true,
+      port: 5173,
+      allowedHosts,
     },
   };
 });

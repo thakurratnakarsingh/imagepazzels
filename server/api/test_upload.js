@@ -15,7 +15,7 @@ async function testUpload() {
     form.append('image', fileBlob, 'dummy.jpg');
 
     console.log('Sending request...');
-    const res = await fetch('https://vids-libraries-appointment-success.trycloudflare.com/api/v1/admin/splashes', {
+    const res = await fetch('http://localhost:5000/api/v1/admin/splashes', {
       method: 'POST',
       body: form
     });

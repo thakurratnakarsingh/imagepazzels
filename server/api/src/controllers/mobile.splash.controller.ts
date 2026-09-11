@@ -15,7 +15,7 @@ export const getActiveSplash = async (req: Request, res: Response, next: NextFun
       });
     }
 
-    const apiBaseUrl = (process.env.API_BASE_URL || 'https://vids-libraries-appointment-success.trycloudflare.com').replace(/\/$/, '');
+    const apiBaseUrl = (process.env.API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
     res.json({
       id: splash.id,
       name: splash.name,

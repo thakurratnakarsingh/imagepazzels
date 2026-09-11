@@ -10,7 +10,7 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "https://vids-libraries-appointment-success.trycloudflare.com/api/v1/mobile/auth/guest",
+          "raw": "http://localhost:5000/api/v1/mobile/auth/guest",
           "protocol": "https",
           "host": ["vids-libraries-appointment-success", "trycloudflare", "com"],
           "path": ["api", "v1", "mobile", "auth", "guest"]
@@ -28,7 +28,7 @@
           }
         ],
         "url": {
-          "raw": "https://vids-libraries-appointment-success.trycloudflare.com/api/v1/mobile/game/levels",
+          "raw": "http://localhost:5000/api/v1/mobile/game/levels",
           "protocol": "https",
           "host": ["vids-libraries-appointment-success", "trycloudflare", "com"],
           "path": ["api", "v1", "mobile", "game", "levels"]

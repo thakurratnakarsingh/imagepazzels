@@ -86,7 +86,10 @@ export const hashFile = (filePath: string) => new Promise<string>((resolve, reje
   const input = fs.createReadStream(filePath);
 
   input.on('error', reject);
-  input.on('data', (chunk) => hash.update(chunk));
+  input.on('data', (chunk) => {
+    const binaryChunk = typeof chunk === 'string' ? Buffer.from(chunk) : chunk;
+    hash.update(binaryChunk as unknown as Uint8Array);
+  });
   input.on('end', () => resolve(hash.digest('hex')));
 });
 

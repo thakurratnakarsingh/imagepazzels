@@ -17,17 +17,22 @@ if (fs.existsSync(sharedBaseUrlPath)) {
 configureImageProcessing();
 
 const app = express();
-const corsOrigins = process.env.CORS_ORIGINS
-  || ['http://localhost:5173', process.env.ADMIN_BASE_URL].filter(Boolean).join(',');
+const corsOrigins = [
+  'http://localhost:5173',
+  'https://admin.actressgamingserver.online',
+  process.env.ADMIN_BASE_URL,
+  ...(process.env.CORS_ORIGINS || '').split(','),
+]
+  .filter((origin): origin is string => Boolean(origin))
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: false, // allow images to be loaded cross-origin
 }));
 app.use(cors({
-  origin: corsOrigins
-    ? corsOrigins.split(',').map((origin) => origin.trim())
-    : '*',
+  origin: corsOrigins,
 }));
 app.use(morgan('dev'));
 app.use(express.json());
