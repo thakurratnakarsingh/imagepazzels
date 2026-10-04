@@ -24,6 +24,12 @@ export const generateAccessToken = (payload: TokenPayload) => {
   });
 };
 
+export const generateAdminAccessToken = (payload: TokenPayload) => {
+  return jwt.sign(payload, getEnvVar('JWT_ACCESS_SECRET'), {
+    expiresIn: (process.env.JWT_ADMIN_ACCESS_EXPIRES_IN || '8h') as SignOptions['expiresIn']
+  });
+};
+
 export const generateRefreshToken = (payload: TokenPayload) => {
   return jwt.sign(payload, getEnvVar('JWT_REFRESH_SECRET'), {
     expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as SignOptions['expiresIn']

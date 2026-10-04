@@ -54,11 +54,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.actresspuzzlegame.network.ApiClient
 import com.actresspuzzlegame.network.CompleteLevelRequest
 import com.actresspuzzlegame.network.GameLevelRequest
@@ -113,6 +115,10 @@ fun GameScreen(
     var showPrivacyPolicy by remember { mutableStateOf(false) }
     var privacyPolicyText by remember { mutableStateOf<String?>(null) }
     var showTutorial by remember { mutableStateOf(!preferences.getBoolean("game_tutorial_seen", false)) }
+    var hintsRemaining by remember { mutableIntStateOf(FREE_HINTS_PER_LEVEL) }
+    var showHintImage by remember { mutableStateOf(false) }
+    var showHintAd by remember { mutableStateOf(false) }
+    var hintAdSeconds by remember { mutableIntStateOf(0) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
     var musicEnabled by remember { mutableStateOf(preferences.getBoolean("music_enabled", true)) }
     var soundEnabled by remember { mutableStateOf(preferences.getBoolean("sound_enabled", true)) }
@@ -136,6 +142,10 @@ fun GameScreen(
             gameData = null
             completion = null
             completionSubmitting = false
+            hintsRemaining = FREE_HINTS_PER_LEVEL
+            showHintImage = false
+            showHintAd = false
+            hintAdSeconds = 0
             elapsedSeconds = 0
             try {
                 val response = ApiClient.service.getGameLevelImage(
@@ -177,6 +187,30 @@ fun GameScreen(
         while (gameData != null && !puzzleState.isCompleted && !showTutorial) {
             delay(1_000)
             elapsedSeconds++
+        }
+    }
+
+    LaunchedEffect(showHintAd) {
+        if (showHintAd) {
+            hintAdSeconds = REWARDED_HINT_AD_SECONDS
+            while (showHintAd && hintAdSeconds > 0) {
+                delay(1_000)
+                hintAdSeconds--
+            }
+            if (showHintAd) {
+                showHintAd = false
+                showHintImage = true
+            }
+        }
+    }
+
+    fun requestHint() {
+        if (gameData == null || isLoading || puzzleState.isCompleted) return
+        if (hintsRemaining > 0) {
+            hintsRemaining--
+            showHintImage = true
+        } else {
+            showHintAd = true
         }
     }
 
@@ -281,6 +315,8 @@ fun GameScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             GameTopBar(
                 currentLevel = currentLevel,
+                hintsRemaining = hintsRemaining,
+                onHint = ::requestHint,
                 onPause = { showSettings = true }
             )
 
@@ -364,6 +400,23 @@ fun GameScreen(
         }
     }
 
+    val hintImageUrl = gameData?.image?.image_url?.let {
+        ApiClient.publicAssetUrl(it) ?: it
+    }
+    if (showHintImage && hintImageUrl != null) {
+        HintImageDialog(
+            imageUrl = hintImageUrl,
+            onDismiss = { showHintImage = false }
+        )
+    }
+
+    if (showHintAd) {
+        RewardedHintAdDialog(
+            secondsRemaining = hintAdSeconds,
+            onDismiss = { showHintAd = false }
+        )
+    }
+
     if (showSettings) {
         PauseSettingsDialog(
             musicEnabled = musicEnabled,
@@ -406,6 +459,8 @@ fun GameScreen(
 @Composable
 private fun GameTopBar(
     currentLevel: Int,
+    hintsRemaining: Int,
+    onHint: () -> Unit,
     onPause: () -> Unit
 ) {
     Row(
@@ -430,12 +485,49 @@ private fun GameTopBar(
             )
         }
         Spacer(Modifier.weight(1f))
+        HintButton(
+            hintsRemaining = hintsRemaining,
+            onClick = onHint
+        )
+        Spacer(Modifier.width(10.dp))
         PremiumIconButton(
             icon = GameIcon.Settings,
             onClick = onPause,
             color = PremiumTextWhite,
             contentDescription = "Pause"
         )
+    }
+}
+
+@Composable
+private fun HintButton(
+    hintsRemaining: Int,
+    onClick: () -> Unit
+) {
+    PremiumPanel(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        elevated = false
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "HINT",
+                color = PremiumGold,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                text = if (hintsRemaining > 0) "$hintsRemaining left" else "Watch ad",
+                color = PremiumTextWhite,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
@@ -1082,7 +1174,91 @@ private fun PrivacyPolicyDialog(content: String?, onDismiss: () -> Unit) {
     )
 }
 
+@Composable
+private fun HintImageDialog(imageUrl: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = PremiumBackgroundDark,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                text = "Original Image",
+                color = PremiumTextWhite,
+                fontWeight = FontWeight.Black
+            )
+        },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Original puzzle image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(420.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(PremiumSurface)
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "Use this preview to remember where the tiles belong.",
+                    color = PremiumTextGray,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Back to puzzle", color = PremiumAccent, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+private fun RewardedHintAdDialog(secondsRemaining: Int, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = PremiumBackgroundDark,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text(
+                text = "Watch ad for hint",
+                color = PremiumTextWhite,
+                fontWeight = FontWeight.Black
+            )
+        },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = PremiumGold)
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = "Your free hints are finished. The original image will open after the ad.",
+                    color = PremiumTextGray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "${secondsRemaining.coerceAtLeast(0)}s",
+                    color = PremiumGold,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = PremiumAccent, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
 private data class CompletionUi(val stars: Int, val reward: Int, val moves: Int, val seconds: Int)
+
+private const val FREE_HINTS_PER_LEVEL = 3
+private const val REWARDED_HINT_AD_SECONDS = 5
 
 private fun gridSizeForLevel(level: Int): Int = when {
     level <= 2 -> 3

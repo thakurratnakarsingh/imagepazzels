@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { Admin } from '../models';
-import { generateAccessToken, generateRefreshToken } from '../utilities/jwt';
+import { generateAdminAccessToken, generateRefreshToken } from '../utilities/jwt';
 
 export const adminLogin = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -27,7 +27,7 @@ export const adminLogin = async (req: Request, res: Response, next: NextFunction
     }
 
     const payload = { id: admin.id, uuid: admin.uuid, role: admin.role, type: 'admin' as const };
-    const accessToken = generateAccessToken(payload);
+    const accessToken = generateAdminAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
     res.json({

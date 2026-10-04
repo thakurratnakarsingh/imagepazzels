@@ -56,11 +56,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.actresspuzzlegame.network.ApiClient
 import com.actresspuzzlegame.network.CompleteLevelRequest
 import com.actresspuzzlegame.network.GameLevelRequest
@@ -105,6 +107,10 @@ fun GameScreen(
     var showPrivacyPolicy by remember { mutableStateOf(false) }
     var privacyPolicyText by remember { mutableStateOf<String?>(null) }
     var showTutorial by remember { mutableStateOf(!preferences.getBoolean("game_tutorial_seen", false)) }
+    var hintsRemaining by remember { mutableIntStateOf(FREE_HINTS_PER_LEVEL) }
+    var showHintImage by remember { mutableStateOf(false) }
+    var showHintAd by remember { mutableStateOf(false) }
+    var hintAdSeconds by remember { mutableIntStateOf(0) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
     var musicEnabled by remember { mutableStateOf(preferences.getBoolean("music_enabled", true)) }
     var soundEnabled by remember { mutableStateOf(preferences.getBoolean("sound_enabled", true)) }
@@ -128,6 +134,10 @@ fun GameScreen(
             gameData = null
             completion = null
             completionSubmitting = false
+            hintsRemaining = FREE_HINTS_PER_LEVEL
+            showHintImage = false
+            showHintAd = false
+            hintAdSeconds = 0
             elapsedSeconds = 0
             try {
                 val response = ApiClient.service.getGameLevelImage(
@@ -169,6 +179,30 @@ fun GameScreen(
         while (gameData != null && !puzzleState.isCompleted && !showTutorial) {
             delay(1_000)
             elapsedSeconds++
+        }
+    }
+
+    LaunchedEffect(showHintAd) {
+        if (showHintAd) {
+            hintAdSeconds = REWARDED_HINT_AD_SECONDS
+            while (showHintAd && hintAdSeconds > 0) {
+                delay(1_000)
+                hintAdSeconds--
+            }
+            if (showHintAd) {
+                showHintAd = false
+                showHintImage = true
+            }
+        }
+    }
+
+    fun requestHint() {
+        if (gameData == null || isLoading || puzzleState.isCompleted) return
+        if (hintsRemaining > 0) {
+            hintsRemaining--
+            showHintImage = true
+        } else {
+            showHintAd = true
         }
     }
 
@@ -289,6 +323,11 @@ fun GameScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.weight(1f))
+                HintPill(
+                    hintsRemaining = hintsRemaining,
+                    onClick = ::requestHint
+                )
+                Spacer(Modifier.size(10.dp))
                 Box(
                     modifier = Modifier
                         .size(54.dp)
@@ -363,6 +402,23 @@ fun GameScreen(
         }
     }
 
+    val hintImageUrl = gameData?.image?.image_url?.let {
+        ApiClient.publicAssetUrl(it) ?: it
+    }
+    if (showHintImage && hintImageUrl != null) {
+        HintImageDialog(
+            imageUrl = hintImageUrl,
+            onDismiss = { showHintImage = false }
+        )
+    }
+
+    if (showHintAd) {
+        RewardedHintAdDialog(
+            secondsRemaining = hintAdSeconds,
+            onDismiss = { showHintAd = false }
+        )
+    }
+
     if (showSettings) {
         SettingsDialog(
             musicEnabled = musicEnabled,
@@ -399,6 +455,37 @@ fun GameScreen(
             content = privacyPolicyText,
             onDismiss = { showPrivacyPolicy = false }
         )
+    }
+}
+
+@Composable
+private fun HintPill(
+    hintsRemaining: Int,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        color = Color.White.copy(alpha = 0.92f),
+        shape = RoundedCornerShape(18.dp),
+        shadowElevation = 8.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "HINT",
+                color = Color(0xFF0D7281),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                text = if (hintsRemaining > 0) "$hintsRemaining left" else "Watch ad",
+                color = Color(0xFF244A80),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
@@ -755,7 +842,75 @@ private fun PrivacyPolicyDialog(content: String?, onDismiss: () -> Unit) {
     )
 }
 
+@Composable
+private fun HintImageDialog(imageUrl: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Original Image", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = "Original puzzle image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(420.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFFE8EAF1))
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Use this preview to remember where the tiles belong.",
+                    color = Color(0xFF42516A),
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Back to puzzle", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+private fun RewardedHintAdDialog(secondsRemaining: Int, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Watch ad for hint", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFF7047B8))
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    "Your free hints are finished. The original image will open after the ad.",
+                    color = Color(0xFF42516A),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${secondsRemaining.coerceAtLeast(0)}s",
+                    color = Color(0xFF7047B8),
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
 private data class CompletionUi(val stars: Int, val reward: Int, val moves: Int, val seconds: Int)
+
+private const val FREE_HINTS_PER_LEVEL = 3
+private const val REWARDED_HINT_AD_SECONDS = 5
 
 private fun formatTime(totalSeconds: Int): String =
     "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)

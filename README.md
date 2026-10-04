@@ -6,6 +6,7 @@ This repository contains the Actress Puzzle Game project with a backend API, adm
 
 - `server/api` — Express + TypeScript API, Sequelize models, file uploads, and admin/mobile endpoints.
 - `server/admin` — React + Vite admin portal for managing actresses, splash screens, and assets.
+- `server/web` - Public Vite website where users can play the puzzle game in the browser and download the Android APK.
 - `mobile` — Original Android puzzle client.
 - `mobile-slide` — Separately installable Android clone with drag-and-drop tile swapping.
 
@@ -17,6 +18,7 @@ Each application has its own base URL file. Update the matching file when a Clou
 
 - `server/api/base-url.properties`
 - `server/admin/base-url.properties`
+- `server/web/base-url.properties`
 - `mobile/base-url.properties`
 - `mobile-slide/base-url.properties`
 
@@ -34,6 +36,15 @@ Each application has its own base URL file. Update the matching file when a Clou
 2. Copy `.env.example` to `.env`
 3. Install locked dependencies: `npm ci`
 4. Run in development: `npm run dev`
+
+### Public Web Game
+
+1. Navigate to `server/web`
+2. Install dependencies: `npm install`
+3. Run in development: `npm run dev`
+4. Open `http://localhost:5177`
+
+The website lets users play the same drag-and-swap puzzle flow in the browser. Android visitors see an APK download popup, and permanent app download slots are available for direct APK, Google Play, and iOS links.
 
 ### Android app
 

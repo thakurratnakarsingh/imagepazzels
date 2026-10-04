@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 1000" role="img" aria-label="Colorful puzzle demo artwork">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#21b6a8"/>
+      <stop offset="0.42" stop-color="#f7c948"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="24%" r="58%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="700" height="1000" fill="url(#sky)"/>
+  <rect width="700" height="1000" fill="url(#glow)"/>
+  <path d="M0 710 C120 650 205 770 334 705 C470 635 559 683 700 615 L700 1000 L0 1000 Z" fill="#0f172a" opacity="0.9"/>
+  <path d="M84 134 L588 94 L631 404 L132 476 Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M124 180 L548 146 L586 374 L170 430 Z" fill="#14b8a6"/>
+  <circle cx="225" cy="255" r="72" fill="#f97316"/>
+  <path d="M173 374 C258 268 332 295 399 367 C446 418 504 395 586 310 L586 374 L170 430 Z" fill="#0f766e"/>
+  <path d="M114 583 L287 515 L394 584 L548 508 L650 575 L650 866 L114 866 Z" fill="#f8fafc" opacity="0.92"/>
+  <path d="M148 626 L282 578 L395 651 L548 574 L615 620 L615 818 L148 818 Z" fill="#fb7185" opacity="0.84"/>
+  <path d="M182 706 C266 646 341 733 418 674 C487 621 546 642 615 688 L615 818 L182 818 Z" fill="#fde047"/>
+  <g fill="none" stroke="#0f172a" stroke-opacity="0.32" stroke-width="8">
+    <path d="M0 333 H700"/>
+    <path d="M0 666 H700"/>
+    <path d="M233 0 V1000"/>
+    <path d="M466 0 V1000"/>
+  </g>
+</svg>
