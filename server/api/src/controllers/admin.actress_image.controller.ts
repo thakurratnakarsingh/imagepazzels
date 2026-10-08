@@ -82,7 +82,16 @@ export const getActressLevels = async (req: Request, res: Response, next: NextFu
       });
     }
 
-    res.json({ success: true, data: levels });
+    res.json({
+      success: true,
+      data: {
+        actress: {
+          id: actress.id,
+          name: actress.name,
+        },
+        levels,
+      },
+    });
   } catch (error) {
     next(error);
   }

@@ -10,6 +10,7 @@ const ActressLevels = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [levels, setLevels] = useState<ActressLevelItem[]>([]);
+  const [actressName, setActressName] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
 
@@ -23,7 +24,14 @@ const ActressLevels = () => {
     try {
       const res = await api.get(`/admin/actresses/${id}/levels`);
       if (res.data.success) {
-        setLevels(res.data.data);
+        const payload = res.data.data;
+        if (Array.isArray(payload)) {
+          setLevels(payload);
+          setActressName('');
+        } else {
+          setLevels(payload.levels || []);
+          setActressName(payload.actress?.name || '');
+        }
         setErrorMsg('');
       } else {
         setErrorMsg(res.data.message || 'Failed to fetch levels');
@@ -89,7 +97,14 @@ const ActressLevels = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Manage Levels</Typography>
+        <Box>
+          <Typography variant="h4">Manage Levels</Typography>
+          {actressName && (
+            <Typography variant="h6" color="text.secondary" sx={{ mt: 0.5 }}>
+              Upload images for {actressName}
+            </Typography>
+          )}
+        </Box>
         <Button variant="outlined" onClick={() => navigate('/actresses')}>
           Back to Actresses
         </Button>

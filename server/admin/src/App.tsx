@@ -10,21 +10,7 @@ import Actresses from './pages/Actresses';
 import SplashManagement from './pages/SplashManagement';
 import ActressLevels from './pages/ActressLevels';
 
-const getTokenExpiryMs = (token: string): number | null => {
-  try {
-    const payload = token.split('.')[1];
-    if (!payload) return null;
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(
-      normalized.length + (4 - (normalized.length % 4 || 4)),
-      '='
-    );
-    const decoded = JSON.parse(atob(padded)) as { exp?: number };
-    return typeof decoded.exp === 'number' ? decoded.exp * 1000 : null;
-  } catch {
-    return null;
-  }
-};
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
   const token = useSelector((state: RootState) => state.auth.token);
@@ -39,20 +25,22 @@ function App() {
   useEffect(() => {
     if (!token) return;
 
-    const expiryMs = getTokenExpiryMs(token);
-    if (!expiryMs) return;
+    let timeoutId: number;
+    const resetIdleTimer = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        dispatch(logout());
+      }, IDLE_TIMEOUT_MS);
+    };
 
-    const delayMs = expiryMs - Date.now();
-    if (delayMs <= 0) {
-      dispatch(logout());
-      return;
-    }
+    const events = ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'];
+    events.forEach((eventName) => window.addEventListener(eventName, resetIdleTimer, { passive: true }));
+    resetIdleTimer();
 
-    const timeoutId = window.setTimeout(() => {
-      dispatch(logout());
-    }, delayMs);
-
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      events.forEach((eventName) => window.removeEventListener(eventName, resetIdleTimer));
+    };
   }, [dispatch, token]);
 
   return (

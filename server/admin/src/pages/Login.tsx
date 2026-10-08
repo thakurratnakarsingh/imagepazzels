@@ -32,7 +32,8 @@ const Login = () => {
       if (res.data.success) {
         dispatch(setCredentials({ 
           admin: res.data.data.admin, 
-          accessToken: res.data.data.accessToken 
+          accessToken: res.data.data.accessToken,
+          refreshToken: res.data.data.refreshToken,
         }));
         navigate('/');
       } else {

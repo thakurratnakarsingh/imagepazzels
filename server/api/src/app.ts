@@ -30,12 +30,34 @@ const corsOrigins = [
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const isAllowedCorsOrigin = (origin?: string) => {
+  if (!origin) return true;
+  if (corsOrigins.includes(origin)) return true;
+
+  try {
+    const { protocol, hostname, port } = new URL(origin);
+    const isHttp = protocol === 'http:' || protocol === 'https:';
+    const isAdminPort = ['5173', '5176', '5177'].includes(port);
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isPrivateIp = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(hostname);
+    return isHttp && isAdminPort && (isLocalHost || isPrivateIp);
+  } catch {
+    return false;
+  }
+};
+
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: false, // allow images to be loaded cross-origin
 }));
 app.use(cors({
-  origin: corsOrigins,
+  origin: (origin, callback) => {
+    if (isAllowedCorsOrigin(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
 }));
 app.use(morgan('dev'));
 app.use(express.json());

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { Admin } from '../models';
-import { generateAdminAccessToken, generateRefreshToken } from '../utilities/jwt';
+import { generateAdminAccessToken, generateRefreshToken, verifyRefreshToken } from '../utilities/jwt';
 
 export const adminLogin = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -46,5 +46,35 @@ export const adminLogin = async (req: Request, res: Response, next: NextFunction
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const refreshAdminToken = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(401).json({ success: false, message: 'Refresh token required' });
+    }
+
+    const decoded = verifyRefreshToken(refreshToken);
+    if (decoded.type !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin refresh token required' });
+    }
+
+    const admin = await Admin.findByPk(decoded.id);
+    if (!admin || !admin.is_active) {
+      return res.status(403).json({ success: false, message: 'Admin account is inactive' });
+    }
+
+    const payload = { id: admin.id, uuid: admin.uuid, role: admin.role, type: 'admin' as const };
+    const accessToken = generateAdminAccessToken(payload);
+
+    res.json({
+      success: true,
+      message: 'Token refreshed',
+      data: { accessToken },
+    });
+  } catch (error) {
+    return res.status(403).json({ success: false, message: 'Invalid or expired refresh token' });
   }
 };

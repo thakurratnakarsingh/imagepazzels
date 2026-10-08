@@ -39,3 +39,7 @@ export const generateRefreshToken = (payload: TokenPayload) => {
 export const verifyAccessToken = (token: string) => {
   return jwt.verify(token, getEnvVar('JWT_ACCESS_SECRET')) as TokenPayload;
 };
+
+export const verifyRefreshToken = (token: string) => {
+  return jwt.verify(token, getEnvVar('JWT_REFRESH_SECRET')) as TokenPayload;
+};

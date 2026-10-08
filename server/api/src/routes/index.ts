@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminLogin } from '../controllers/admin.auth.controller';
+import { adminLogin, refreshAdminToken } from '../controllers/admin.auth.controller';
 import { mobileGuestLogin } from '../controllers/mobile.auth.controller';
 import { getActiveSplash } from '../controllers/mobile.splash.controller';
 import { getActresses } from '../controllers/mobile.actress.controller';
@@ -36,6 +36,7 @@ router.get('/mobile/support/tickets/:id', authenticateMobileToken, getTicketMess
 
 // --- Admin APIs ---
 router.post('/admin/auth/login', adminLogin);
+router.post('/admin/auth/refresh', refreshAdminToken);
 
 // Splash Management APIs
 router.get('/admin/splashes', authenticateAdminToken, getAllSplashes);
