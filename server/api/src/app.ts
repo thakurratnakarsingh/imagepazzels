@@ -22,6 +22,8 @@ const corsOrigins = [
   'http://localhost:5176',
   'http://localhost:5177',
   'https://admin.actressgamingserver.online',
+  'https://adultactresspuzzles.fun',
+  'https://www.adultactresspuzzles.fun',
   process.env.ADMIN_BASE_URL,
   process.env.WEB_BASE_URL,
   ...(process.env.CORS_ORIGINS || '').split(','),

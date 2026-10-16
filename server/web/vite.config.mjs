@@ -43,7 +43,13 @@ export default defineConfig(({ mode }) => {
     || 'https://api.actressgamingserver.online/api/v1';
   const apiOrigin = apiBaseUrl.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
   const webHost = toHost(baseUrls.WEB_BASE_URL || env.WEB_BASE_URL || '');
-  const allowedHosts = [webHost, 'actressgamingserver.online', 'www.actressgamingserver.online']
+  const allowedHosts = [
+    webHost,
+    'actressgamingserver.online',
+    'www.actressgamingserver.online',
+    'adultactresspuzzles.fun',
+    'www.adultactresspuzzles.fun',
+  ]
     .filter(Boolean);
 
   return {
