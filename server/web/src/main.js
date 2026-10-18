@@ -1,4 +1,5 @@
 import './styles.css';
+import './advertising.js';
 
 const COMPILED_API_BASE_URL = typeof __API_BASE_URL__ !== 'undefined' ? __API_BASE_URL__ : 'https://api.actressgamingserver.online/api/v1';
 const API_BASE_URL = (import.meta.env.DEV ? '/api/v1' : COMPILED_API_BASE_URL).replace(/\/$/, '');
