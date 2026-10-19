@@ -1,6 +1,7 @@
 # JuicyAds placements
 
-The website loads one display zone below the game and model selection area:
+The website loads one display zone below the results after each completed level.
+No ad is requested on the selection screen or during an unfinished puzzle.
 
 | Available width | Zone | Creative size |
 | --- | --- | --- |
@@ -8,8 +9,9 @@ The website loads one display zone below the game and model selection area:
 | 632–907 px | 1129383 | 632 × 190 |
 | Below 632 px | 1129384 | 308 × 286 |
 
-The ad lives outside the game render root. Game actions do not recreate it or
-request additional impressions. Rotation scales the existing creative if needed.
+The ad lives outside the game render root. Re-rendering a completed level does
+not request additional impressions. Starting another level removes the ad; its
+completion loads a new placement. Rotation scales the existing creative if needed.
 An ad blocker or an unfilled zone does not prevent the puzzle from working.
 
 Both Android projects show zone 1129384 below the home screen Play button in a

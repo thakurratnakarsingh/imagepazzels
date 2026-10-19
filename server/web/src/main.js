@@ -1,5 +1,6 @@
 import './styles.css';
-import './advertising.js';
+import { syncCompletionAd } from './advertising.js';
+import { bindPuzzleTile, cancelTileDrag } from './tile-drag.js';
 
 const COMPILED_API_BASE_URL = typeof __API_BASE_URL__ !== 'undefined' ? __API_BASE_URL__ : 'https://api.actressgamingserver.online/api/v1';
 const API_BASE_URL = (import.meta.env.DEV ? '/api/v1' : COMPILED_API_BASE_URL).replace(/\/$/, '');
@@ -31,7 +32,6 @@ const state = {
   arrangement: [],
   imageAspectRatio: BOARD_ASPECT_RATIO,
   selectedPosition: null,
-  dragSourcePosition: null,
   moveCount: 0,
   elapsedBaseSeconds: 0,
   startedAt: null,
@@ -196,6 +196,7 @@ async function startGame() {
 }
 
 function render() {
+  cancelTileDrag();
   app.innerHTML = `
     <main class="shell">
       <header class="topbar">
@@ -232,6 +233,8 @@ function render() {
     <div id="modal-root">${renderActiveModal()}</div>
   `;
   bindEvents();
+  syncCompletionAd(state.completed && state.levelData
+    ? `${state.levelData.session_id}:${state.levelNumber}` : null);
   if (state.levelData && !state.completed && !state.loadingGame) startTimer();
 }
 
@@ -414,7 +417,7 @@ function renderBoard() {
         class="tile ${isSelected ? 'is-active' : ''}"
         data-action="tile"
         data-position="${position}"
-        draggable="true"
+        draggable="false"
         style="${style}"
         type="button"
         aria-label="Tile ${tileId + 1}, position ${position + 1}"
@@ -558,25 +561,10 @@ function stopHintAd() {
 }
 
 function bindTileEvents(tile) {
-  tile.addEventListener('click', () => handleTileTap(Number(tile.dataset.position)));
-  tile.addEventListener('dragstart', (event) => {
-    state.dragSourcePosition = Number(tile.dataset.position);
-    event.dataTransfer.effectAllowed = 'move';
-  });
-  tile.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  });
-  tile.addEventListener('drop', (event) => {
-    event.preventDefault();
-    const targetPosition = Number(tile.dataset.position);
-    if (state.dragSourcePosition !== null) {
-      swapTiles(state.dragSourcePosition, targetPosition);
-    }
-    state.dragSourcePosition = null;
-  });
-  tile.addEventListener('dragend', () => {
-    state.dragSourcePosition = null;
+  bindPuzzleTile(tile, {
+    onTap: handleTileTap,
+    onSwap: swapTiles,
+    canPlay: () => Boolean(state.levelData) && !state.completed && !state.loadingGame,
   });
 }
 
@@ -637,6 +625,7 @@ async function swapTiles(sourcePosition, targetPosition) {
   const next = [...state.arrangement];
   [next[sourcePosition], next[targetPosition]] = [next[targetPosition], next[sourcePosition]];
   state.arrangement = next;
+  state.selectedPosition = null;
   state.moveCount += 1;
   state.completed = isSolved();
   render();
