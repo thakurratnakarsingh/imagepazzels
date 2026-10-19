@@ -187,7 +187,9 @@ export const saveProgress = async (req: AuthRequest, res: Response, next: NextFu
       && new Set(tileArrangement).size === tileCount
       && Math.min(...tileArrangement) === 0
       && Math.max(...tileArrangement) === tileCount - 1;
-    if (!validArrangement || tileArrangement[emptyTileIndex] !== tileCount - 1) {
+    if (!validArrangement || !Number.isInteger(emptyTileIndex)
+        || emptyTileIndex < 0 || emptyTileIndex >= tileCount
+        || tileArrangement[emptyTileIndex] !== tileCount - 1) {
       return res.status(400).json({ success: false, message: 'Invalid tile arrangement' });
     }
     if (!Number.isInteger(moveCount) || moveCount < 0 ||
@@ -320,7 +322,7 @@ export const getGameLevelImage = async (req: AuthRequest, res: Response, next: N
   try {
     const { level, actress_ids } = req.body;
 
-    if (!level || typeof level !== 'number' || level < 1 || level > 1000) {
+    if (!Number.isInteger(level) || level < 1 || level > 1000) {
       return res.status(400).json({ success: false, message: 'Valid level number is required' });
     }
 

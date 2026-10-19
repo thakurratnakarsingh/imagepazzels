@@ -158,9 +158,7 @@ async function startGame() {
     const columns = Number(data.columns) || rows;
     const totalTiles = rows * columns;
     const saved = data.saved_progress;
-    const savedArrangement = Array.isArray(saved?.tile_arrangement)
-      && saved.tile_arrangement.length === totalTiles
-      && new Set(saved.tile_arrangement).size === totalTiles
+    const savedArrangement = isValidTileArrangement(saved?.tile_arrangement, totalTiles)
       ? saved.tile_arrangement
       : null;
 
@@ -178,8 +176,10 @@ async function startGame() {
       },
     };
     state.arrangement = savedArrangement || createSwapShuffle(totalTiles, state.levelData.shuffle_moves);
-    state.moveCount = Number(saved?.move_count) || 0;
-    state.elapsedBaseSeconds = Number(saved?.elapsed_time_seconds) || 0;
+    state.moveCount = savedArrangement && Number.isInteger(saved?.move_count)
+      ? Math.max(0, saved.move_count) : 0;
+    state.elapsedBaseSeconds = savedArrangement && Number.isInteger(saved?.elapsed_time_seconds)
+      ? Math.max(0, saved.elapsed_time_seconds) : 0;
     state.completed = isSolved();
     startTimer();
   } catch (error) {
@@ -812,6 +812,13 @@ function createSwapShuffle(totalTiles, moves) {
     [arrangement[0], arrangement[1]] = [arrangement[1], arrangement[0]];
   }
   return arrangement;
+}
+
+function isValidTileArrangement(arrangement, totalTiles) {
+  return Array.isArray(arrangement)
+    && arrangement.length === totalTiles
+    && arrangement.every((tile) => Number.isInteger(tile) && tile >= 0 && tile < totalTiles)
+    && new Set(arrangement).size === totalTiles;
 }
 
 function randomIndex(max) {
